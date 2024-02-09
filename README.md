@@ -2,9 +2,9 @@
 
 ### Authors
 
-- Jonathan Astwood (github.com/SanguineCynic)
-- Gabrielle Scott (github.com/gabriellecdjscott)
-- Brittany Thomas (github.com/BrittanyThomas162)
+- [Jonathan Astwood](https://github.com/SanguineCynic)
+- [Gabrielle Scott](https://github.com/gabriellecdjscott)
+- [Brittany Thomas](https://github.com/BrittanyThomas162)
 
 ### About the Project
 
