@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static',filename='css/home.css') }}">
+{% endblock %}
+
+{% block main %}
+<div class="p-5 mb-4 bg-light rounded-3 border">
+  <img src="{{ url_for('static', filename='/images/plane.jpg')}}" alt="" id="planeimg" class="img-fluid">
+
+</div>
+{% endblock %}
+
+{% block js %}{% endblock %}
