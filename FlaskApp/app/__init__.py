@@ -3,8 +3,13 @@ from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from .config import Config
 from flask_migrate import Migrate
+<<<<<<< HEAD
 import os, psycopg2
 # from app.models import Icao
+=======
+import os
+import psycopg2
+>>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -38,5 +43,9 @@ cur.execute("""
 
 conn.commit()
 
+<<<<<<< HEAD
 cur.close() 
+=======
+cur.close()
+>>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
 conn.close()

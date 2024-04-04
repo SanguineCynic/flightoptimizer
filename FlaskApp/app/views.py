@@ -1,12 +1,24 @@
+<<<<<<< HEAD
 import os, requests, psycopg2
+=======
+import os, requests
+>>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
 from app import app, db, login_manager
 from flask import render_template, request, redirect, url_for, flash, jsonify, request
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
+<<<<<<< HEAD
 from app.models import UserProfile, Icao
 from app.forms import LoginForm
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
+=======
+from app.models import UserProfile
+from app.forms import LoginForm
+from werkzeug.security import check_password_hash, generate_password_hash
+from datetime import datetime
+
+>>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
 
 
 ###
@@ -47,6 +59,7 @@ def about():
     """Render the website's about page."""
     return render_template('about.html', name="Mary Jane")
 
+<<<<<<< HEAD
 # This needs to be here. Without it, the endpoint /weather/<icao> cannot exist
 @app.route('/weather/')
 def weather():
@@ -56,10 +69,17 @@ def weather():
 def airport_weather(icao):
     api_key = 'a741a79a6d7246f8a3e0364dc8' # Replace with your actual API key
     url = f'https://api.checkwx.com/metar/{icao}/nearest/decoded'
+=======
+@app.route('/weather/', methods=['GET'])
+def weather():
+    api_key = 'a741a79a6d7246f8a3e0364dc8' # Replace with your actual API key
+    url = 'https://api.checkwx.com/metar/MKJP/decoded'
+>>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
     headers = {'X-API-Key': api_key}
 
     response = requests.request("GET", url, headers={'X-API-Key': api_key})
     data = response.json()["data"][0]
+<<<<<<< HEAD
 
     temperature_data = data["temperature"]
     degsC = temperature_data["celsius"]
@@ -77,17 +97,33 @@ def airport_weather(icao):
 
     return render_template('weather.html', degsC=degsC, degsF=degsF, speedKPH=speedKPH, speedMPH=speedMPH, icao=icao, humidity=humidity,
                            forecast_desc=forecast_desc)
+=======
+    temperature_data = data["temperature"]
+    degsC = temperature_data["celsius"]
+    degsF = temperature_data["fahrenheit"]
+    # if response.status_code == 200:
+    #     data = response.json()
+    #     print(data["temperature"])
+        # temperature = data['temperature'] # Assuming the temperature is directly accessible
+    return render_template('weather.html', degsC=degsC, degsF=degsF)
+>>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     form = LoginForm()
 
+<<<<<<< HEAD
+=======
+    # change this to actually validate the entire form submission
+    # and not just one field
+>>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
     if form.validate_on_submit():
         # Get the username and password values from the form.
         res = request.form
         formUsername = res['username']
         formPassword = res['password']
 
+<<<<<<< HEAD
         user =  UserProfile.query.filter_by(username = formUsername)
 
         #Try catch in the event of incorrect username
@@ -102,6 +138,23 @@ def login():
         except IndexError:
             flash("User not found", "error")
             return redirect(url_for('login'))
+=======
+
+        # Using your model, query database for a user based on the username
+        # and password submitted. Remember you need to compare the password hash.
+        # You will need to import the appropriate function to do so.
+        # Then store the result of that query to a `user` variable so it can be
+        # passed to the login_user() method below.
+        #user =  db.session.execute(db.select(UserProfile).filter_by(username = formUsername)).scalars()
+        user =  UserProfile.query.filter_by(username = formUsername)
+        # user = userQuery[0]
+        if check_password_hash(user[0].password, formPassword):
+            # Gets user id, load into session
+            login_user(user[0])
+            # Remember to flash a message to the user
+            flash("Successful login")
+            return redirect(url_for("home"))  # The user should be redirected to the home instead
+>>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
 
     return render_template("login.html", form=form)
 

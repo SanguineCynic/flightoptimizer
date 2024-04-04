@@ -17,12 +17,25 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="weather-card">
+<<<<<<< HEAD
                 <h1 class="weather-title text-center">Weather Dashboard for {{ icao }}</h1>
                 <div class="weather-info">
                     <p>Temperature: <span class="metric">{{ degsC }}°C</span> <span class="imperial">{{ degsF }}°F</span></p>
                     <p>Weather: {{ forecast_desc }}</p>
                     <p>Wind Speed: <span class="metric">{{ speedKPH }}KPH</span> <span class="imperial">{{ speedMPH }}MPH</span></p>
                     <p>Humidity: {{ humidity }}%</p>
+=======
+                <h1 class="weather-title text-center">Weather Dashboard</h1>
+                <div class="weather-info">
+                    <p>Temperature: <span id="tempC">{{ degsC }}°C</span> <span id="tempF">{{ degsF }}°F</span></p>
+                    <p>Weather: Sunny</p>
+                    <p>Forecast High: 25°C</p>
+                    <p>Forecast Low: 15°C</p>
+                    <p>Wind Speed: 5 m/s</p>
+                    <p>Humidity: 60%</p>
+                    <p>UV Index: 3</p>
+                    <p>Air Quality: Good</p>
+>>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
                 </div>
                 <button class="weather-btn">View Weather Map</button>
             </div>

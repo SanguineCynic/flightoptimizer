@@ -36,6 +36,7 @@ class UserProfile(db.Model):
             return str(self.id)  # python 3 support
 
     def __repr__(self):
+<<<<<<< HEAD
         return '<User %r>' % (self.username)
     
 class Icao(db.Model):
@@ -49,3 +50,6 @@ class Icao(db.Model):
         self.region_name = region_name
         self.icao=icao
         self.airport=airport 
+=======
+        return '<User %r>' % (self.username)
+>>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
