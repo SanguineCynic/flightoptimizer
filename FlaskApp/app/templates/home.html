@@ -1,12 +1,69 @@
 {% extends "base.html" %}
 
-{% block css %}{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static',filename='css/home.css') }}">
+{% endblock %}
 
 {% block main %}
-<div class="p-5 mb-4 bg-light rounded-3 border">
-  <div class="container-fluid py-5">
-    <h1 class="display-5 fw-bold">Hello, world!</h1>
-    <p>This is a simple starter template for a Flask Application</p>
+ <!-- Search Bar -->
+ <div class="container mt-5">
+  <div class="input-group mb-3">
+      <input type="text" class="form-control" placeholder="Search for flights or weather" aria-label="Search" aria-describedby="button-addon2">
+      <div class="input-group-append">
+          <button class="btn btn-outline-secondary" type="button" id="button-addon2">Search</button>
+      </div>
+  </div>
+</div>
+
+<!-- Upcoming Flight Cards -->
+<div class="container">
+  <div class="row">
+      <!-- Flight Card Example -->
+      <div class="col-md-4">
+          <div class="card mb-4">
+              <div class="card-body">
+                  <h5 class="card-title">Flight 123</h5>
+                  <p class="card-text">Departure: 10:00 AM</p>
+                  <p class="card-text">Arrival: 12:30 PM</p>
+                  <a href="#" class="btn btn-primary">View Details</a>
+              </div>
+          </div>
+      </div>
+      <!-- Add more flight cards as needed -->
+  </div>
+</div>
+
+<!-- Weather Cards -->
+<div class="container">
+  <div class="row">
+      <!-- Weather Card Example -->
+      <div class="col-md-4">
+          <div class="card mb-4">
+              <div class="card-body">
+                  <h5 class="card-title">Weather Update</h5>
+                  <p class="card-text">Temperature: 20°C</p>
+                  <p class="card-text">Conditions: Clear</p>
+                  <a href="#" class="btn btn-primary">More Details</a>
+              </div>
+          </div>
+      </div>
+      <!-- Add more weather cards as needed -->
+  </div>
+</div>
+
+<div class="container">
+  <div class="row justify-content-center">
+      <div class="col-md-8">
+          <div class="card shadow mt-5">
+              <div class="card-body">
+                  <h5 class="card-title">AI Aviation Fuel Emissions Optimizer</h5>
+                  <p class="card-text">
+                      Our AI-driven solution optimizes fuel emissions in aviation by leveraging advanced machine learning techniques. It analyzes real-time flight data to predict fuel consumption and emissions, enabling airlines to reduce their environmental impact.
+                  </p>
+                  <a href="#" class="btn btn-primary">Learn More</a>
+              </div>
+          </div>
+      </div>
   </div>
 </div>
 {% endblock %}

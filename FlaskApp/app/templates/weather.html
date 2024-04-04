@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static',filename='css/weather.css') }}">
+{% endblock %}
+
+{% block main %}
+<div class="switch-container">
+    <span id="degree-label-C">°C</span>
+    <label class="switch">
+        <input type="checkbox" id="temperature-switch">
+        <span class="slider round"></span>
+    </label>
+    <span id="degree-label-F">°F</span>
+</div>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="weather-card">
+                <h1 class="weather-title text-center">Weather Dashboard</h1>
+                <div class="weather-info">
+                    <p>Temperature: <span id="tempC">{{ degsC }}°C</span> <span id="tempF">{{ degsF }}°F</span></p>
+                    <p>Weather: Sunny</p>
+                    <p>Forecast High: 25°C</p>
+                    <p>Forecast Low: 15°C</p>
+                    <p>Wind Speed: 5 m/s</p>
+                    <p>Humidity: 60%</p>
+                    <p>UV Index: 3</p>
+                    <p>Air Quality: Good</p>
+                </div>
+                <button class="weather-btn">View Weather Map</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static',filename='js/weather.js') }}"></script>
+{% endblock %}

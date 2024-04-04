@@ -1,0 +1,20 @@
+body {
+    padding-top: 5rem;
+}
+
+.form-login {
+    max-width: 330px;
+    padding: 15px;
+}
+
+.form-login input[type="text"] {
+    margin-bottom: -1px;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.form-login input[type="password"] {
+    margin-bottom: 10px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
