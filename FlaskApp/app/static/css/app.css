@@ -1,3 +1,44 @@
+:root {
+    --deepBlue: #242582; /* A deep shade of blue */
+    --darkIndigo: #553D67; /* A dark shade of indigo or purple */
+    --brightRed: #F64C72; /* A bright red color */
+    --softPurple: #99738E; /* A soft shade of purple */
+    --coolBlue: #2F2FA2; /* A cool shade of blue */
+    --offBlue: hsl(240, 60%, 93%); /* Primary colour with HSL L value increased to 93%. Off-white colour*/
+  }
+
+  /*--------------------------------------------------------------
+# Disable aos animation delay on mobile devices
+--------------------------------------------------------------*/
+@media screen and (max-width: 768px) {
+    [data-aos-delay] {
+      transition-delay: 0 !important;
+    }
+  }
+  
 body {
-    padding-top: 5rem;
+    font-family: "Open Sans", sans-serif;
+    padding-top: 8rem;
+    background-color: var(--offBlue) ;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6, .font-primary {
+  font-family: "Raleway", sans-serif;
+}
+
+a {
+    color: #eb5d1e;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    color: #ef7f4d;
+    text-decoration: none;
+  }
+
+  /* For flash errors */
+.alert-error{
+  border: 1px solid crimson;
+  background-color: firebrick;
 }

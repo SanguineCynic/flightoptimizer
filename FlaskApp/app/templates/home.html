@@ -1,14 +1,116 @@
 {% extends "base.html" %}
 
-{% block css %}{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static',filename='css/home.css') }}">
+{% endblock %}
 
 {% block main %}
-<div class="p-5 mb-4 bg-light rounded-3 border">
-  <div class="container-fluid py-5">
-    <h1 class="display-5 fw-bold">Hello, world!</h1>
-    <p>This is a simple starter template for a Flask Application</p>
+<!-- Search Bar -->
+<div class="input-group mb-3">
+    <div class="input-group-prepend">
+       <span class="input-group-text" id="filter">Filter</span>
+    </div>
+    <input type="text" class="form-control" id="searchField" placeholder="Enter text to filter..." aria-label="Filter" aria-describedby="filter">
+   </div>
+   
+<div class="scrollable-table">
+    <table id="icao_table">
+        <thead>
+            <tr>
+                <th>Region Name</th>
+                <th>ICAO Code</th>
+                <th>Airport</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in range(region_names|length) %}
+            <tr>
+                <td>{{ region_names[i] }}</td>
+                <td><a href="{{ url_for('airport_weather', icao=icao_codes[i]) }}">{{ icao_codes[i] }}</a></td>
+                <td>{{ airports[i] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+<!-- Upcoming Flight Cards -->
+<div class="container">
+  <div class="row">
+      <!-- Flight Card Example -->
+      <div class="col-md-4">
+          <div class="card mb-4">
+              <div class="card-body">
+                  <h5 class="card-title">Flight 123</h5>
+                  <p class="card-text">Departure: 10:00 AM</p>
+                  <p class="card-text">Arrival: 12:30 PM</p>
+                  <a href="#" class="btn btn-primary">View Details</a>
+              </div>
+          </div>
+      </div>
+      <!-- Add more flight cards as needed -->
+  </div>
+</div>
+
+<!-- Weather Cards -->
+<div class="container">
+  <div class="row">
+      <!-- Weather Card Example -->
+      <div class="col-md-4">
+          <div class="card mb-4">
+              <div class="card-body">
+                  <h5 class="card-title">Weather Update</h5>
+                  <p class="card-text">Temperature: 20°C</p>
+                  <p class="card-text">Conditions: Clear</p>
+                  <a href="#" class="btn btn-primary">More Details</a>
+              </div>
+          </div>
+      </div>
+      <!-- Add more weather cards as needed -->
+  </div>
+</div>
+
+<div class="container">
+  <div class="row justify-content-center">
+      <div class="col-md-8">
+          <div class="card shadow mt-5">
+              <div class="card-body">
+                  <h5 class="card-title">AI Aviation Fuel Emissions Optimizer</h5>
+                  <p class="card-text">
+                      Our AI-driven solution optimizes fuel emissions in aviation by leveraging advanced machine learning techniques. It analyzes real-time flight data to predict fuel consumption and emissions, enabling airlines to reduce their environmental impact.
+                  </p>
+                  <a href="#" class="btn btn-primary">Learn More</a>
+              </div>
+          </div>
+      </div>
   </div>
 </div>
 {% endblock %}
 
-{% block js %}{% endblock %}
+{% block js %}
+<script>
+    document.getElementById('searchField').addEventListener('keyup', function() {
+    var filter = this.value.toUpperCase();
+    var table = document.getElementById('icao_table');
+    var tr = table.getElementsByTagName('tr');
+    var i, txtValue;
+
+    for (i = 0; i < tr.length; i++) {
+        var td = tr[i].getElementsByTagName("td");
+        if (td && td.length > 0) { // Ensure td exists and has at least one element
+            var regionName = td[0] ? td[0].textContent || td[0].innerText : '';
+            var icaoCode = td[1] ? td[1].textContent || td[1].innerText : '';
+            var airport = td[2] ? td[2].textContent || td[2].innerText : '';
+
+            if (regionName.toUpperCase().indexOf(filter) > -1 || icaoCode.toUpperCase().indexOf(filter) > -1 || airport.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+});
+
+</script>
+{% endblock %}

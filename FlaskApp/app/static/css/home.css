@@ -1,0 +1,16 @@
+.scrollable-table {
+    width: 100%; /* Adjust the width as needed */
+    max-height: 400px; /* Adjust the maximum height as needed */
+    overflow-y: auto; /* Enable vertical scrolling */
+    resize: both; /* Make the container resizable */
+    border: 1px solid black; /* Optional: Add a border */
+}
+
+.scrollable-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+tr{
+    border: 1px solid black;
+}
