@@ -36,37 +36,37 @@ cur.execute("""
         );
 """)
 
-cur.execute("""
--- Reports tabLe
-CREATE TABLE IF NOT EXISTS Reports (
-    ReportID INT AUTO_INCREMENT PRIMARY KEY,
-    AdminID INT NOT NULL,
-    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (AdminID) REFERENCES AdminAccounts(AdminID)
-);
+# cur.execute("""
+# -- Reports tabLe
+# CREATE TABLE IF NOT EXISTS Reports (
+#     ReportID INT AUTO_INCREMENT PRIMARY KEY,
+#     AdminID INT NOT NULL,
+#     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+#     FOREIGN KEY (AdminID) REFERENCES AdminAccounts(AdminID)
+# );
 
--- Fuel emissions report table
-CREATE TABLE IF NOT EXISTS FuelEmissions (
-    EmissionID INT AUTO_INCREMENT PRIMARY KEY,
-    ReportID INT NOT NULL,
-    AirportID INT NOT NULL,
-    EmissionDate DATE NOT NULL,
-    FuelType VARCHAR(50) NOT NULL,
-    EmissionAmount DECIMAL(10,2) NOT NULL, -- Assuming emissions are recorded in some unit of measurement
-    Status VARCHAR(50) NOT NULL,
-    FOREIGN KEY (ReportID) REFERENCES Reports(ReportID),
-    FOREIGN KEY (AirportID) REFERENCES Airports(AirportID)
-);
+# -- Fuel emissions report table
+# CREATE TABLE IF NOT EXISTS FuelEmissions (
+#     EmissionID INT AUTO_INCREMENT PRIMARY KEY,
+#     ReportID INT NOT NULL,
+#     AirportID INT NOT NULL,
+#     EmissionDate DATE NOT NULL,
+#     FuelType VARCHAR(50) NOT NULL,
+#     EmissionAmount DECIMAL(10,2) NOT NULL, -- Assuming emissions are recorded in some unit of measurement
+#     Status VARCHAR(50) NOT NULL,
+#     FOREIGN KEY (ReportID) REFERENCES Reports(ReportID),
+#     FOREIGN KEY (AirportID) REFERENCES Airports(AirportID)
+# );
 
--- Emission anomalies table
-CREATE TABLE IF NOT EXISTS EmissionAnomalies (
-    AnomalyID INT AUTO_INCREMENT PRIMARY KEY,
-    EmissionID INT NOT NULL,
-    AnomalyType VARCHAR(255) NOT NULL,
-    AnomalyStatus VARCHAR(50) NOT NULL,
-    FOREIGN KEY (EmissionID) REFERENCES FuelEmissions(EmissionID)
-);
-""")
+# -- Emission anomalies table
+# CREATE TABLE IF NOT EXISTS EmissionAnomalies (
+#     AnomalyID INT AUTO_INCREMENT PRIMARY KEY,
+#     EmissionID INT NOT NULL,
+#     AnomalyType VARCHAR(255) NOT NULL,
+#     AnomalyStatus VARCHAR(50) NOT NULL,
+#     FOREIGN KEY (EmissionID) REFERENCES FuelEmissions(EmissionID)
+# );
+# """)
 
 conn.commit()
 

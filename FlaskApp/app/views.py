@@ -1,24 +1,12 @@
-<<<<<<< HEAD
 import os, requests, psycopg2
-=======
-import os, requests
->>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
 from app import app, db, login_manager
 from flask import render_template, request, redirect, url_for, flash, jsonify, request
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
-<<<<<<< HEAD
 from app.models import UserProfile, Icao
 from app.forms import LoginForm
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
-=======
-from app.models import UserProfile
-from app.forms import LoginForm
-from werkzeug.security import check_password_hash, generate_password_hash
-from datetime import datetime
-
->>>>>>> 8b9d1e52343fc0843edd1cadf69f2ddd0d9f2af5
 
 
 ###
