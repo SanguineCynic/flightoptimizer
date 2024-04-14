@@ -36,6 +36,22 @@ cur.execute("""
         );
 """)
 
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS icao_codes(
+        region_name VARCHAR(255),
+        icao VARCHAR(5),
+        airport VARCHAR(255)
+    );
+""")
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS airports (
+    city VARCHAR(255),
+    country VARCHAR(255),
+    iata_code VARCHAR(4) PRIMARY KEY,
+    continent VARCHAR(255)
+);""")
+
 # cur.execute("""
 # -- Reports tabLe
 # CREATE TABLE IF NOT EXISTS Reports (

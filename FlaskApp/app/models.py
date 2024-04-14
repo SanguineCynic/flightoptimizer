@@ -49,3 +49,17 @@ class Icao(db.Model):
         self.region_name = region_name
         self.icao=icao
         self.airport=airport 
+
+class Airport(db.Model):
+    __tablename__ = "airports"
+
+    city = db.Column(db.String(255))
+    country = db.Column(db.String(255))
+    iata_code = db.Column(db.String(4), primary_key=True)
+    continent = db.Column(db.String(255))
+
+    def __init__(self,city, country, iata_code, continent):
+        self.city = city
+        self.country = country
+        self.iata_code=iata_code
+        self.continent=continent 

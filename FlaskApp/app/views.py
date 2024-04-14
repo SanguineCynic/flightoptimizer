@@ -3,10 +3,11 @@ from app import app, db, login_manager
 from flask import render_template, request, redirect, url_for, flash, jsonify, request
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
-from app.models import UserProfile, Icao
+from app.models import UserProfile, Icao, Airport
 from app.forms import LoginForm
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
+# from amadeus import Client, ResponseError
 
 
 ###
@@ -17,17 +18,11 @@ from datetime import datetime
 @login_required
 def home():
     """Render website's home page."""
-    conn = psycopg2.connect(
-        host="localhost",
-        database="FlightOptimizer",
-        user=os.environ.get('DATABASE_USERNAME', 'postgres'),
-        password= os.environ.get('DATABASE_PASSWORD')
-    )    
-    cur = conn.cursor()
+    conn, cur = get_db_connection()
 
     # Queries the Icao model from models.py to check for table population. If empty, populate.
     if Icao.query.first() is None:
-        with open("C:/Users/jastw/Desktop/Labs/Capstone/flightoptimizer/FlaskApp/app/icao_query.sql", "r", encoding="utf-8") as file:
+        with open(os.getcwd()+"\\app\\static\\sql\\icao_query.sql", "r", encoding="utf-8") as file:
             cur.execute(file.read())
             db.session.commit()
     
@@ -72,11 +67,41 @@ def airport_weather(icao):
     conditions = data["clouds"][0]
     forecast_desc = conditions["text"]
     
-    icao = data["icao"]
     humidity = data["humidity"]["percent"]
 
     return render_template('weather.html', degsC=degsC, degsF=degsF, speedKPH=speedKPH, speedMPH=speedMPH, icao=icao, humidity=humidity,
                            forecast_desc=forecast_desc)
+
+@app.route('/flights/')
+def flights():
+    conn, cur = get_db_connection()
+    # Queries the Icao model from models.py to check for table population. If empty, populate.
+    if Airport.query.first() is None:
+        with open(os.getcwd()+"\\app\\static\\sql\\load_airports.sql", "r", encoding="utf-8") as file:
+            cur.execute(file.read())
+            db.session.commit()
+    return render_template('flights.html')
+
+@app.route('/flights/<dest>', methods=['GET'])
+def flights_to_dest():
+    try:
+        # Example for finding cheapest flight destinations from Madrid
+        response = amadeus.shopping.flight_destinations.get(
+            origin='MAD',
+            departureDate='2024-04-14'
+        )
+        return jsonify(response.data)
+    except ResponseError as error:
+        return jsonify({"error": str(error)})
+    
+# @app.route("/flights/", methods=['GET'])
+# def flights():
+#     con, cursor = get_db_connection()
+#     cursor.execute("SELECT planemodel, source, destination, source_icao, destination_icao FROM flights")
+#     flights = cursor.fetchall()
+#     print(flights)
+#     return render_template("flights.html", flights=flights)
+
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
@@ -152,3 +177,14 @@ def logout():
     logout_user()
     flash("You are now logged out")
     return redirect(url_for('home'))
+
+# Database connection setup
+def get_db_connection():
+    conn = psycopg2.connect(
+        host="localhost",
+        database="FlightOptimizer",
+        user=os.environ.get('DATABASE_USERNAME', 'postgres'),
+        password= os.environ.get('DATABASE_PASSWORD')
+    )    
+    cur = conn.cursor()    
+    return conn, cur
