@@ -1,4 +1,6 @@
 import os, requests, psycopg2
+from amadeus import Client, ResponseError
+
 from app import app, db, login_manager
 from flask import render_template, request, redirect, url_for, flash, jsonify, request
 from flask_login import login_user, logout_user, current_user, login_required
@@ -24,7 +26,7 @@ def home():
     if Icao.query.first() is None:
         with open(os.getcwd()+"\\app\\static\\sql\\icao_query.sql", "r", encoding="utf-8") as file:
             cur.execute(file.read())
-            db.session.commit()
+            conn.commit()
     
     # Query to get all ICAO codes
     cur.execute("SELECT * FROM icao_codes")
@@ -48,6 +50,7 @@ def weather():
     return redirect(url_for('home'))
 
 @app.route('/weather/<icao>', methods=['GET'])
+@login_required
 def airport_weather(icao):
     api_key = 'a741a79a6d7246f8a3e0364dc8' # Replace with your actual API key
     url = f'https://api.checkwx.com/metar/{icao}/nearest/decoded'
@@ -73,21 +76,42 @@ def airport_weather(icao):
                            forecast_desc=forecast_desc)
 
 @app.route('/flights/')
+@login_required
 def flights():
     conn, cur = get_db_connection()
-    # Queries the Icao model from models.py to check for table population. If empty, populate.
+
+    # Queries the Airport model from models.py to check for table population. If empty, populate.
     if Airport.query.first() is None:
+        print("Populating table...")
         with open(os.getcwd()+"\\app\\static\\sql\\load_airports.sql", "r", encoding="utf-8") as file:
+            print("SQL file found.")
             cur.execute(file.read())
-            db.session.commit()
-    return render_template('flights.html')
+            conn.commit()
+            print("Table populated.")
+    
+    cur.execute("SELECT * FROM airports")
+    rows = cur.fetchall()
+
+    cities = [row[0] for row in rows]
+    countries = [row[1] for row in rows]
+    iata = [row[2] for row in rows]
+    continent = [row[3] for row in rows]
+    print(len(cities))
+
+    return render_template('flights.html', cities=cities, countries=countries,iata=iata,continent=continent)
 
 @app.route('/flights/<dest>', methods=['GET'])
-def flights_to_dest():
+@login_required
+def flights_to_dest(dest):
+    rockMe = Client(
+    client_id=os.environ.get('AMADEUS_CLIENT_ID'),
+    client_secret=os.environ.get('AMADEUS_CLIENT_SECRET')
+)
+    
     try:
-        # Example for finding cheapest flight destinations from Madrid
-        response = amadeus.shopping.flight_destinations.get(
-            origin='MAD',
+        # Use the destination as the origin for the flight search
+        response = rockMe.shopping.flight_destinations.get(
+            origin=dest,
             departureDate='2024-04-14'
         )
         return jsonify(response.data)
