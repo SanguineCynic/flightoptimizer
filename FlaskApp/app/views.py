@@ -52,9 +52,14 @@ def weather():
 @app.route('/weather/<icao>', methods=['GET'])
 @login_required
 def airport_weather(icao):
-    api_key = 'a741a79a6d7246f8a3e0364dc8' # Replace with your actual API key
+    api_key = os.environ.get('CX_WEATHER_API_KEY') 
     url = f'https://api.checkwx.com/metar/{icao}/nearest/decoded'
     headers = {'X-API-Key': api_key}
+
+    taf_data = fetch_taf_data(icao)
+    sigmet_data = fetch_sigmet_data(icao)
+    taf_impacts = analyze_taf_fuel_impact(taf_data)
+    sigmet_impacts = analyze_sigmet_fuel_impact(sigmet_data)
 
     response = requests.request("GET", url, headers={'X-API-Key': api_key})
     data = response.json()["data"][0]
@@ -63,9 +68,13 @@ def airport_weather(icao):
     degsC = temperature_data["celsius"]
     degsF = temperature_data["fahrenheit"]
 
-    wind_data=data["wind"]
-    speedKPH = wind_data["speed_kph"]
-    speedMPH = wind_data["speed_mph"]
+    try:
+        wind_data=data["wind"]
+        speedKPH = wind_data["speed_kph"]
+        speedMPH = wind_data["speed_mph"]
+    except KeyError:
+        speedKPH = "Not Reported "
+        speedMPH = "Not Reported "
 
     conditions = data["clouds"][0]
     forecast_desc = conditions["text"]
@@ -73,7 +82,7 @@ def airport_weather(icao):
     humidity = data["humidity"]["percent"]
 
     return render_template('weather.html', degsC=degsC, degsF=degsF, speedKPH=speedKPH, speedMPH=speedMPH, icao=icao, humidity=humidity,
-                           forecast_desc=forecast_desc)
+                           forecast_desc=forecast_desc, taf_impacts=taf_impacts, sigmet_impacts=sigmet_impacts)
 
 @app.route('/flights/')
 @login_required
@@ -212,3 +221,86 @@ def get_db_connection():
     )    
     cur = conn.cursor()    
     return conn, cur
+
+# Helper functions for SIGMET and TAF weather advisories
+def fetch_data(url, headers):
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Failed to fetch data: {response.status_code} {response.text}")
+        return None
+
+def fetch_taf_data(icao):
+    taf_base_url = 'https://api.checkwx.com/taf/'
+    url = f"{taf_base_url}{icao}/decoded"
+    api_key = os.environ.get('CX_WEATHER_API_KEY') 
+    headers = {'X-API-Key': api_key}
+    return fetch_data(url, headers)
+
+def fetch_sigmet_data(icao):
+    sigmet_base_url = 'https://api.checkwx.com/sigmet/'
+    url = f"{sigmet_base_url}{icao}/decoded"
+    api_key = os.environ.get('CX_WEATHER_API_KEY')
+    headers = {'X-API-Key': api_key}
+    return fetch_data(url, headers)
+
+def analyze_taf_fuel_impact(taf_data):
+    impacts = []
+    if taf_data and 'data' in taf_data:
+        for report in taf_data['data']:
+            icao = report.get('icao', 'Unknown')
+            for forecast in report.get('forecast', []):
+                period = f"From {forecast['timestamp']['from']} to {forecast['timestamp']['to']}"
+                conditions_described = ', '.join(c['text'] for c in forecast.get('conditions', []))
+                wind_speed = forecast.get('wind', {}).get('speed_kts', 0)
+                impact_desc = f"{conditions_described}. High winds might increase fuel if wind speed > 20 kts ({wind_speed} kts)."
+
+                # Include visibility and significant weather conditions like snow, ice, or fog
+                if 'visibility' in forecast and forecast['visibility']['miles_float'] < 1:
+                    impact_desc += " Low visibility could lead to delays and increased fuel usage."
+                if any('snow' in c['text'].lower() or 'ice' in c['text'].lower() or 'fog' in c['text'].lower() for c in forecast.get('conditions', [])):
+                    impact_desc += " Conditions like snow, ice, or fog may require de-icing and can cause delays, increasing fuel usage."
+
+                # Check for rain and its operational implications
+                if any('rain' in c['text'].lower() for c in forecast.get('conditions', [])):
+                    impact_desc += " Rain may lead to increased braking distances and reduced runway friction, potentially affecting fuel usage due to longer taxi and rollout times."
+
+                # Check for thunderstorms and turbulence for additional flight considerations
+                if any('thunderstorm' in c['text'].lower() for c in forecast.get('conditions', [])):
+                    impact_desc += " Thunderstorms may necessitate significant rerouting."
+                if any('turbulence' in c['text'].lower() for c in forecast.get('conditions', [])):
+                    impact_desc += " Turbulence could lead to operational adjustments and potential fuel inefficiencies."
+
+                # Append the formatted string to impacts list
+                impacts.append({
+                    'icao': icao,
+                    'period': period,
+                    'description': impact_desc
+                })
+    return impacts
+
+def analyze_sigmet_fuel_impact(sigmet_data):
+    impacts = []
+    if sigmet_data and 'data' in sigmet_data:
+        for entry in sigmet_data['data']:
+            icao = entry.get('icao', 'Unknown')
+            hazard_type = entry.get('hazard', {}).get('type', {}).get('text', 'Unknown')
+            description = f"Hazard type: {hazard_type}. "
+            if 'Thunderstorm' in hazard_type:
+                description += "Potential rerouting increases fuel."
+            elif 'Volcanic ash' in hazard_type:
+                description += "Avoidance increases fuel usage."
+            # ... more conditions if necessary
+
+            impacts.append({
+                'icao': icao,
+                'description': description
+            })
+        if not impacts:
+            impacts.append({
+            'icao': 'N/A',
+            'period': 'N/A',
+            'description': 'No significant SIGMET advisories affecting fuel emissions.'
+        })
+    return impacts

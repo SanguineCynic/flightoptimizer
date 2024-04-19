@@ -30,6 +30,64 @@
     </div>
 </div>
 
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Weather Impacts for {{ icao }}</h1>
+
+    <!-- Table for TAF Fuel Impacts -->
+    <div class="card mb-4">
+        <div class="card-header">
+            TAF Fuel Impacts
+        </div>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">ICAO</th>
+                    <th scope="col">Period</th>
+                    <th scope="col">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for impact in taf_impacts %}
+                <tr>
+                    <td>{{ impact.icao }}</td>
+                    <td>{{ impact.period }}</td>
+                    <td>{{ impact.description }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Table for SIGMET Fuel Impacts -->
+    <div class="card">
+        <div class="card-header">
+            SIGMET Fuel Impacts
+        </div>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">ICAO</th>
+                    <th scope="col">Period</th>
+                    <th scope="col">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for impact in sigmet_impacts %}
+                <tr>
+                    <td>{{ impact.icao }}</td>
+                    <td>{{ impact.period }}</td>
+                    <td>{{ impact.description }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="/" class="btn btn-primary">Back to Home</a>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block js %}
