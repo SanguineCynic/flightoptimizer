@@ -1,16 +1,24 @@
+# Generic python packages
 import os, requests, psycopg2
-from amadeus import Client, ResponseError
+from datetime import datetime
 
+# Flask imports
 from app import app, db, login_manager
 from flask import render_template, request, redirect, url_for, flash, jsonify, request
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from app.models import UserProfile, Icao, Airport
-from app.forms import LoginForm
+from app.forms import LoginForm, FuelPredictionForm
 from werkzeug.security import check_password_hash, generate_password_hash
-from datetime import datetime
-# from amadeus import Client, ResponseError
 
+# Amadeus for live flight data
+from amadeus import Client, ResponseError
+
+# AI model for fuel emissions predictions
+import pickle
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 
 ###
 # Routing for your application.
@@ -135,6 +143,56 @@ def flights_to_dest(dest):
 #     print(flights)
 #     return render_template("flights.html", flights=flights)
 
+
+@app.route('/prediction/', methods=['GET', 'POST'])
+def fuelPrediction():
+    # Load your model and scaler
+    fuel_Pred_Model = pickle.load(open(os.getcwd()+"\\fuel_Pred_Model.pkl", "rb"))
+    scaler = pickle.load(open(os.getcwd()+"\\scaler.pkl", "rb")) 
+
+    # Load the LabelEncoder for categorical columns
+    label_encoder = LabelEncoder()
+    form = FuelPredictionForm()
+
+    if form.validate_on_submit():
+        # Collect features from the form
+        features_input = [
+            form.airline_iata.data.upper(),
+            form.acft_icao.data.upper(),
+            form.acft_class.data.upper(),
+            form.seymour_proxy.data.upper(),
+            float(form.seats.data),
+            float(form.n_flights.data),
+            form.iata_departure.data.upper(),
+            form.iata_arrival.data.upper(),
+            float(form.distance_km.data),
+            float(form.rpk.data),
+            float(form.fuel_burn_seymour.data),
+            float(form.fuel_burn.data)
+        ]
+
+        # Convert to DataFrame for easier manipulation
+        df = pd.DataFrame([features_input], columns=['airline_iata', 'acft_icao', 'acft_class', 'seymour_proxy', 'seats', 'n_flights', 'iata_departure', 'iata_arrival', 'distance_km', 'rpk', 'fuel_burn_seymour', 'fuel_burn'])
+
+        # Handle missing values (if any)
+        # Assuming you've handled missing values in your training data, you might want to do the same here
+        # For example, fill missing values with the mean or median
+        # test_df.fillna(test_df.mean(), inplace=True)
+
+        # Encode categorical columns
+        categorical_columns = ['airline_iata', 'acft_icao', 'acft_class', 'seymour_proxy', 'iata_departure', 'iata_arrival']
+        for column in categorical_columns:
+            df[column] = label_encoder.fit_transform(df[column])
+
+        # Convert to numpy array and scale
+        features = df.values
+        features = scaler.transform(features)
+
+        # Make prediction
+        prediction = fuel_Pred_Model.predict(features)
+
+        return render_template('fuelPrediction.html', form=form, prediction=prediction[0])
+    return render_template('fuelPrediction.html', form=form, prediction=0)
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():

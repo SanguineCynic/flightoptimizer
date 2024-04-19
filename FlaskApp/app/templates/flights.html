@@ -39,6 +39,8 @@
 {% endblock %}
 
 {% block js %}
+<script>document.getElementById("flightsAnchor").classList.add("active")</script>
+
 <script>
     document.getElementById('searchField').addEventListener('keyup', function() {
     var filter = this.value.toUpperCase();

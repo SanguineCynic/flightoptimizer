@@ -34,43 +34,6 @@
     </table>
 </div>
 
-
-<!-- Upcoming Flight Cards -->
-<div class="container">
-  <div class="row">
-      <!-- Flight Card Example -->
-      <div class="col-md-4">
-          <div class="card mb-4">
-              <div class="card-body">
-                  <h5 class="card-title">Flight 123</h5>
-                  <p class="card-text">Departure: 10:00 AM</p>
-                  <p class="card-text">Arrival: 12:30 PM</p>
-                  <a href="#" class="btn btn-primary">View Details</a>
-              </div>
-          </div>
-      </div>
-      <!-- Add more flight cards as needed -->
-  </div>
-</div>
-
-<!-- Weather Cards -->
-<div class="container">
-  <div class="row">
-      <!-- Weather Card Example -->
-      <div class="col-md-4">
-          <div class="card mb-4">
-              <div class="card-body">
-                  <h5 class="card-title">Weather Update</h5>
-                  <p class="card-text">Temperature: 20°C</p>
-                  <p class="card-text">Conditions: Clear</p>
-                  <a href="#" class="btn btn-primary">More Details</a>
-              </div>
-          </div>
-      </div>
-      <!-- Add more weather cards as needed -->
-  </div>
-</div>
-
 <div class="container">
   <div class="row justify-content-center">
       <div class="col-md-8">
@@ -89,6 +52,7 @@
 {% endblock %}
 
 {% block js %}
+<script>document.getElementById("dashboardAnchor").classList.add("active")</script>
 <script>
     document.getElementById('searchField').addEventListener('keyup', function() {
     var filter = this.value.toUpperCase();

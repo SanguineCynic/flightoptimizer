@@ -9,9 +9,9 @@
   
     <nav id="navbar" class="navbar">
       <ul>
-        <li><a class="nav-link scrollto active" href="{{ url_for('home') }}">Dashboard</a></li>
-        <li><a class="nav-link scrollto" href="{{ url_for('weather') }}">Weather</a></li>
-        <li><a class="nav-link scrollto" href="{{ url_for('flights') }}">Flights</a></li>
+        <li><a id="dashboardAnchor" class="nav-link scrollto" href="{{ url_for('home') }}">Dashboard</a></li>
+        <li><a id="predictionAnchor" class="nav-link scrollto" href="{{ url_for('fuelPrediction') }}">Fuel Emissions</a></li>
+        <li><a id="fightsAnchor" class="nav-link scrollto" href="{{ url_for('flights') }}">Flights</a></li>
         <!-- <li><a class="nav-link scrollto" href="#services">Pricing</a></li>
         <li><a class="nav-link scrollto" href="#team">Team</a></li> -->
         <li class="dropdown"><a href="#"><span>Profile</span> <i class="bi bi-chevron-down"></i></a>
@@ -28,7 +28,7 @@
             </li> -->
             <!-- <li><a href="#">Training</a></li> -->
             <li><a href="#">Settings</a></li>
-            <li><a href="#">Logout</a></li>
+            <li><a href="{{ url_for('logout') }}">Logout</a></li>
           </ul>
         </li>
         <!-- <li><a class="nav-link scrollto" href="#contact">Contact</a></li> -->
