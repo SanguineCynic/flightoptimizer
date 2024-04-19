@@ -1,0 +1,70 @@
+{% extends 'base.html' %} {% block main %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Emissions Predictor</title>
+  </head>
+  <body>
+    <h1>Emissions Predictor</h1>
+    <form
+      method="POST"
+      action="{{ url_for('fuelPrediction') }}"
+      class="form-group"
+    >
+      {{ form.csrf_token }}
+
+      <div class="form-group">
+        {{ form.airline_iata.label(class="form-label") }} {{
+        form.airline_iata(class="form-control", placeholder="EV") }}
+      </div>
+      <div class="form-group">
+        {{ form.acft_icao.label(class="form-label") }} {{
+        form.acft_icao(class="form-control", placeholder="E145") }}
+      </div>
+      <div class="form-group">
+        {{ form.acft_class.label(class="form-label") }} {{
+        form.acft_class(class="form-control") }}
+      </div>
+      <div class="form-group">
+        {{ form.seymour_proxy.label(class="form-label") }} {{
+        form.seymour_proxy(class="form-control", placeholder="E145") }}
+      </div>
+      <div class="form-group">
+        {{ form.seats.label(class="form-label") }} {{
+        form.seats(class="form-control", placeholder="25") }}
+      </div>
+      <div class="form-group">
+        {{ form.n_flights.label(class="form-label") }} {{
+        form.n_flights(class="form-control", placeholder="0.5") }}
+      </div>
+      <div class="form-group">
+        {{ form.iata_departure.label(class="form-label") }} {{
+        form.iata_departure(class="form-control", placeholder="DCA") }}
+      </div>
+      <div class="form-group">
+        {{ form.iata_arrival.label(class="form-label") }} {{
+        form.iata_arrival(class="form-control", placeholder="SYR") }}
+      </div>
+      <div class="form-group">
+        {{ form.distance_km.label(class="form-label") }} {{
+        form.distance_km(class="form-control", placeholder="479.4297243479493")
+        }}
+      </div>
+      <div class="form-group">
+        {{ form.rpk.label(class="form-label") }} {{
+        form.rpk(class="form-control", placeholder="9876.252321567756") }}
+      </div>
+      <div class="form-group">
+        {{ form.fuel_burn_seymour.label(class="form-label") }} {{
+        form.fuel_burn_seymour(class="form-control",
+        placeholder="1137.9129061535943") }}
+      </div>
+      <div class="form-group">
+        {{ form.fuel_burn.label(class="form-label") }} {{
+        form.fuel_burn(class="form-control", placeholder="568.9564530767972") }}
+      </div>
+      <input type="submit" value="Predict" class="btn btn-primary" />
+    </form>
+  </body>
+</html>
+{% endblock %}
