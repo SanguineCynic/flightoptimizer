@@ -1,6 +1,7 @@
 # Generic python packages
 import os, requests, psycopg2
-from datetime import datetime
+import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta
 
 # Flask imports
 from app import app, db, login_manager
@@ -8,7 +9,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, r
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from app.models import UserProfile, Icao, Airport
-from app.forms import LoginForm, FuelPredictionForm
+from app.forms import LoginForm, FuelPredictionForm, EmissionForm
 from werkzeug.security import check_password_hash, generate_password_hash
 
 # Amadeus for live flight data
@@ -117,21 +118,32 @@ def flights():
 
     return render_template('flights.html', cities=cities, countries=countries,iata=iata,continent=continent)
 
-@app.route('/flights/<dest>', methods=['GET'])
+from flask import request
+
+@app.route('/flights/<src>/<dest>/<date>', methods=['GET'])
 @login_required
-def flights_to_dest(dest):
+def flights_to_dest(src, dest, date):
     rockMe = Client(
-    client_id=os.environ.get('AMADEUS_CLIENT_ID'),
-    client_secret=os.environ.get('AMADEUS_CLIENT_SECRET')
-)
+        client_id="tT7RKPlYmqow0doAYBPEi0Emi9N78wWX",
+        client_secret="UFSIgv5qhZxFLAog"
+    )
     
     try:
-        # Use the destination as the origin for the flight search
-        response = rockMe.shopping.flight_destinations.get(
-            origin=dest,
-            departureDate='2024-04-14'
-        )
-        return jsonify(response.data)
+        # Format the date as 'YYYY-MM-DD'
+        formatted_date = date
+
+        response = rockMe.shopping.flight_offers_search.get(
+                    originLocationCode=src, 
+                    destinationLocationCode=dest, 
+                    departureDate=formatted_date,
+                    adults=1)
+        
+        flights_info=[]
+        for itinerary in response.data:
+            flights_info.append(itinerary)
+            
+
+        return jsonify(flights_info)
     except ResponseError as error:
         return jsonify({"error": str(error)})
     
@@ -193,6 +205,91 @@ def fuelPrediction():
 
         return render_template('fuelPrediction.html', form=form, prediction=prediction[0])
     return render_template('fuelPrediction.html', form=form, prediction=0)
+
+@app.route('/emissions-report/', methods=['GET', 'POST'])
+def generateReport():
+    form = EmissionForm()
+    if form.validate_on_submit():
+        country_name = get_country_name_by_code(form.country.data)
+        raw_data = get_emissions(
+            country=form.country.data,
+            timeframe=form.timeframe.data,
+            start_year=form.start_year.data,
+            month=form.month.data if form.month.data else None,
+            quarter=form.quarter.data if form.quarter.data else None,
+            end_year=form.end_year.data,
+            end_month=form.end_month.data if form.end_month.data else None,
+            end_quarter=form.end_quarter.data if form.end_quarter.data else None
+        )
+
+        if raw_data == "NoRecordsFound":
+            flash('No data available for the selected parameters.', 'warning')
+            return redirect(url_for('generateReport'))
+        elif raw_data == "ErrorParsingXML" or raw_data == "Failed to retrieve data":
+            flash('There was an error processing your request. Please try again later.', 'error')
+            return redirect(url_for('generateReport'))
+
+        data_summary = {}
+        total_emissions = 0
+        for item in raw_data:
+            time_key = item['time_period']
+            emissions = float(item['emissions'])
+            total_emissions += emissions
+            data_summary.setdefault(time_key, 0)
+            data_summary[time_key] += emissions
+
+        return render_template('report.html', data_summary=data_summary, total_emissions=total_emissions, country=country_name, timeframe=form.timeframe.data, start_year=form.start_year.data, end_year=form.end_year.data)
+    else:
+            # If there is a validation error, the form will be rendered with error messages
+            for fieldName, errorMessages in form.errors.items():
+                for err in errorMessages:
+                    flash(f'Error in {fieldName}: {err}', 'error')
+            redirect(url_for('generateReport'))
+    return render_template('reportform.html', form=form)
+
+
+# Works and retruns  a dictionary
+def get_emissions(country, timeframe, start_year, month, quarter, end_year, end_month, end_quarter):
+    base_url = "https://sdmx.oecd.org/public/rest/data"
+    dataflow = "OECD.SDD.NAD.SEEA,DSD_AIR_TRANSPORT@DF_AIR_TRANSPORT,1.0"
+    
+    # Determine time suffix and period based on the timeframe
+    if timeframe == 'annual':
+        start_period = f"{start_year}"
+        end_period = f"{end_year}"
+        time_suffix = ".A......."
+    elif timeframe == 'monthly':
+        start_period = f"{start_year}-{month.zfill(2)}"
+        end_period = f"{end_year}-{end_month.zfill(2)}"
+        time_suffix = ".M......."
+    elif timeframe == 'quarterly':
+        start_period = f"{start_year}-Q{quarter}"
+        end_period = f"{end_year}-Q{end_quarter}"
+        time_suffix = ".Q......."
+    
+    url = f"{base_url}/{dataflow}/{country}{time_suffix}?startPeriod={start_period}&endPeriod={end_period}&dimensionAtObservation=AllDimensions"
+    print("Requesting URL:", url)  # For debugging purposes
+    response = requests.get(url)
+    print("response: ", response)
+    
+    if response.status_code == 404:
+        return "NoRecordsFound"
+    elif response.status_code == 200:
+        try:
+            root = ET.fromstring(response.content)
+            emissions_data = []
+            for obs in root.findall('.//generic:Obs', namespaces={'generic': 'http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic'}):
+                data_point = {
+                    'time_period': obs.find('.//generic:Value[@id="TIME_PERIOD"]', namespaces={'generic': 'http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic'}).attrib['value'],
+                    'emissions': float(obs.find('.//generic:ObsValue', namespaces={'generic': 'http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic'}).attrib['value']),
+                    'unit': obs.find('.//generic:Value[@id="UNIT_MEASURE"]', namespaces={'generic': 'http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic'}).attrib['value']
+                }
+                emissions_data.append(data_point)
+            return emissions_data
+        except ET.ParseError:
+            return "ErrorParsingXML"
+    return "Failed to retrieve data"  # Handles other unexpected status codes
+
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
@@ -362,3 +459,22 @@ def analyze_sigmet_fuel_impact(sigmet_data):
             'description': 'No significant SIGMET advisories affecting fuel emissions.'
         })
     return impacts
+
+def fetch_country_codes():
+    url = 'https://restcountries.com/v3.1/all'
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        countries = {country['cca3']: country['name']['common'] for country in data}
+        # Sorting countries by their common name
+        sorted_countries = dict(sorted(countries.items(), key=lambda item: item[1]))
+        return sorted_countries
+    else:
+        print("Failed to fetch data")
+        return {}
+    
+def get_country_name_by_code(country_code):
+    # Fetch the dictionary of country codes
+    countries = fetch_country_codes()
+    # Return the country name matching the country code
+    return countries.get(country_code, "Unknown country code")

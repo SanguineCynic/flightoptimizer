@@ -14,3 +14,8 @@
 tr{
     border: 1px solid black;
 }
+
+.iata-button.selected {
+    background-color: #007bff; /* Example color */
+    color: white; /* Text color */
+}

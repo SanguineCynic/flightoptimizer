@@ -5,16 +5,23 @@
 {% endblock %}
 
 {% block main %}
+
+<!-- Add this inside your HTML template, preferably near the "View Flights" button -->
+<label for="flightDate">Select Flight Date:</label>
+<input type="date" id="flightDate" name="flightDate">
+
+
+<h1>FROM</h1>
 <!-- Search Bar -->
 <div class="input-group mb-3">
     <div class="input-group-prepend">
        <span class="input-group-text" id="filter">Filter</span>
     </div>
-    <input type="text" class="form-control" id="searchField" placeholder="Enter text to filter..." aria-label="Filter" aria-describedby="filter">
+    <input type="text" class="form-control" id="searchField1" placeholder="Enter text to filter..." aria-label="Filter" aria-describedby="filter">
    </div>
    
 <div class="scrollable-table">
-    <table id="icao_table">
+    <table id="icao_table1">
         <thead>
             <tr>
                 <th>City</th>
@@ -28,7 +35,39 @@
             <tr>
                 <td>{{ cities[i] }}</td>
                 <td>{{ countries[i] }}</td>
-                <td><a href="{{ url_for('flights_to_dest', dest=iata[i]) }}">{{ iata[i] }}</a></td>
+                <td><button class="iata-button" data-iata-code="{{ iata[i] }}">{{ iata[i] }}</button></td>
+                <td>{{ continent[i] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<br><br>
+
+<h1>TO</h1>
+<div class="input-group mb-3">
+    <div class="input-group-prepend">
+       <span class="input-group-text" id="filter">Filter</span>
+    </div>
+    <input type="text" class="form-control" id="searchField2" placeholder="Enter text to filter..." aria-label="Filter" aria-describedby="filter">
+   </div>
+<!-- Duplicated Table -->
+<div class="scrollable-table">
+    <table id="icao_table_2">
+        <thead>
+            <tr>
+                <th>City</th>
+                <th>Country</th>
+                <th>IATA Code</th>
+                <th>Continent</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in range(cities|length) %}
+            <tr>
+                <td>{{ cities[i] }}</td>
+                <td>{{ countries[i] }}</td>
+                <td><button class="iata-button" data-iata-code="{{ iata[i] }}">{{ iata[i] }}</button></td>
                 <td>{{ continent[i] }}</td>
             </tr>
             {% endfor %}
@@ -36,25 +75,42 @@
     </table>
 </div>
 
+<button id="viewFlightsButton" onclick="viewFlights()">View Flights</button>
+
+
 {% endblock %}
 
 {% block js %}
 <script>document.getElementById("flightsAnchor").classList.add("active")</script>
 
 <script>
-    document.getElementById('searchField').addEventListener('keyup', function() {
+// Event listener for the first search bar
+document.getElementById('searchField1').addEventListener('keyup', function() {
     var filter = this.value.toUpperCase();
-    var table = document.getElementById('icao_table');
+    var tableId = 'icao_table1'; // ID of the first table
+    filterTableRows(tableId, filter);
+});
+
+// Event listener for the second search bar
+document.getElementById('searchField2').addEventListener('keyup', function() {
+    var filter = this.value.toUpperCase();
+    var tableId = 'icao_table_2'; // ID of the second table
+    filterTableRows(tableId, filter);
+});
+
+// Function to filter table rows based on the filter value
+function filterTableRows(tableId, filter) {
+    var table = document.getElementById(tableId);
     var tr = table.getElementsByTagName('tr');
     var i, txtValue;
 
     for (i = 0; i < tr.length; i++) {
         var td = tr[i].getElementsByTagName("td");
-        if (td && td.length > 0) { // Ensure td exists and has at least one element
-            var city = td[0] ? td[0].textContent || td[0].innerText : '';
-            var country = td[1] ? td[1].textContent || td[1].innerText : '';
-            var iata = td[2] ? td[2].textContent || td[2].innerText : '';
-            var continent = td[3] ? td[3].textContent || td[3].innerText : '';
+        if (td && td.length > 0) {
+            var city = td[0]? td[0].textContent || td[0].innerText : '';
+            var country = td[1]? td[1].textContent || td[1].innerText : '';
+            var iata = td[2]? td[2].textContent || td[2].innerText : '';
+            var continent = td[3]? td[3].textContent || td[3].innerText : '';
 
             if (city.toUpperCase().indexOf(filter) > -1 || country.toUpperCase().indexOf(filter) > -1 || iata.toUpperCase().indexOf(filter) > -1 || continent.toUpperCase().indexOf(filter) > -1) {
                 tr[i].style.display = "";
@@ -63,7 +119,68 @@
             }
         }
     }
+}
+
+// Variables to store clicked IATA codes
+var clickedIataCode1;
+var clickedIataCode2;
+
+// Function to handle IATA code click
+function handleIataClick(event) {
+    var iataCode = event.target.getAttribute('data-iata-code');
+    var tableId = event.target.closest('table').id; // Determine the table ID based on the clicked element
+
+    // Toggle selection for the clicked IATA code
+    var clickedButton = event.target;
+    if (clickedButton.classList.contains('selected')) {
+        clickedButton.classList.remove('selected');
+    } else {
+        clickedButton.classList.add('selected');
+    }
+
+    if (tableId === 'icao_table1') {
+        clickedIataCode1 = iataCode;
+        console.log('Clicked IATA code from Table 1:', clickedIataCode1);
+    } else if (tableId === 'icao_table_2') {
+        clickedIataCode2 = iataCode;
+        console.log('Clicked IATA code from Table 2:', clickedIataCode2);
+    }
+
+    // Update the "View Flights" button text based on the clicked IATA codes
+    var viewFlightsButton = document.getElementById('viewFlightsButton');
+    if (clickedIataCode1 && clickedIataCode2) {
+        viewFlightsButton.textContent = `View flights from ${clickedIataCode1} to ${clickedIataCode2}`;
+    } else if (clickedIataCode1) {
+        viewFlightsButton.textContent = `View flights from ${clickedIataCode1}`;
+    } else if (clickedIataCode2) {
+        viewFlightsButton.textContent = `View flights to ${clickedIataCode2}`;
+    } else {
+        viewFlightsButton.textContent = 'View Flights';
+    }
+}
+
+
+function viewFlights(){
+    // Get the selected date
+    var flightDate = document.getElementById('flightDate').value;
+    
+    // Construct the URL string manually
+    var src = clickedIataCode1;
+    var dest = clickedIataCode2;
+    var url = '/flights/' + src + '/' + dest + '/' + flightDate;
+
+    // Redirect to the constructed URL
+    window.location.href = url;
+}
+
+
+
+// Add event listeners to all IATA buttons in both tables
+document.querySelectorAll('.iata-button').forEach(button => {
+    button.addEventListener('click', handleIataClick);
 });
+
+
 
 </script>
 {% endblock %}

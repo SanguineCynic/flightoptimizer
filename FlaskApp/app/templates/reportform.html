@@ -1,0 +1,84 @@
+{% extends 'base.html' %} {% block css %}
+
+{% endblock %} {% block main %}
+{% include 'flash_messages.html' %}
+
+<div class="container mt-4">
+  <h2>Emission Report Form</h2>
+  <form method="post" class="needs-validation" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="mb-3">
+      {{ form.country.label(class="form-label") }} {{
+      form.country(class="form-select") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.timeframe.label(class="form-label") }} {{
+      form.timeframe(class="form-select", id="timeframe") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.start_year.label(class="form-label") }} {{
+      form.start_year(class="form-control") }}
+    </div>
+
+    <!-- Monthly fields -->
+    <div id="monthly_fields" class="mb-3" style="display: none">
+      <div class="mb-3">
+        {{ form.month.label(class="form-label") }} {{
+        form.month(class="form-select") }}
+      </div>
+      <div>
+        {{ form.end_month.label(class="form-label") }} {{
+        form.end_month(class="form-select") }}
+      </div>
+    </div>
+
+    <!-- Quarterly fields -->
+    <div id="quarterly_fields" class="mb-3" style="display: none">
+      <div class="mb-3">
+        {{ form.quarter.label(class="form-label") }} {{
+        form.quarter(class="form-select") }}
+      </div>
+      <div>
+        {{ form.end_quarter.label(class="form-label") }} {{
+        form.end_quarter(class="form-select") }}
+      </div>
+    </div>
+
+    <div class="mb-3">
+      {{ form.end_year.label(class="form-label") }} {{
+      form.end_year(class="form-control") }}
+    </div>
+
+    <div class="mb-3">{{ form.submit(class="btn btn-primary") }}</div>
+  </form>
+</div>
+
+{% endblock %} 
+{% block js %}
+<script>document.getElementById("reportAnchor").classList.add("active")</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const timeframeSelect = document.querySelector("#timeframe");
+      const monthlyFields = document.querySelector("#monthly_fields");
+      const quarterlyFields = document.querySelector("#quarterly_fields");
+  
+      function toggleFields() {
+        monthlyFields.style.display = "none";
+        quarterlyFields.style.display = "none";
+  
+        if (timeframeSelect.value === "monthly") {
+          monthlyFields.style.display = "block";
+        } else if (timeframeSelect.value === "quarterly") {
+          quarterlyFields.style.display = "block";
+        }
+      }
+  
+      timeframeSelect.addEventListener("change", toggleFields);
+      toggleFields(); // Ensure correct fields are shown on initial load
+  
+    });
+  </script>
+  {% endblock %}

@@ -1,0 +1,79 @@
+{% extends 'base.html' %} {% block main %}
+<div class="container mt-4">
+  <h1>CO<sub>2</sub> Fuel Emission Report for {{ country }}</h1>
+  <h2>Reporting Period: {{ start_year }} to {{ end_year }}</h2>
+  <h3>Total CO<sub>2</sub> Emissions: {{ total_emissions | round(2) }} Tons</h3>
+
+  <button id="lineChartButton" class="btn btn-primary">Line Chart</button>
+  <button id="barChartButton" class="btn btn-primary">Bar Chart</button>
+
+  <canvas id="emissionChart" width="400" height="200"></canvas>
+
+  <h2>Emissions Summary</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ timeframe | capitalize }} Period</th>
+        <th>CO<sub>2</sub> Emissions (Tons)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for period, emissions in data_summary.items() %}
+      <tr>
+        <td>{{ period }}</td>
+        <td>{{ emissions | round(2) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>document.getElementById("reportAnchor").classList.add("active")</script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const ctx = document.getElementById('emissionChart').getContext('2d');
+      let currentChart;
+
+      function createChart(type) {
+          if (currentChart) {
+              currentChart.destroy(); // Destroy the current chart before creating a new one
+          }
+          currentChart = new Chart(ctx, {
+              type: type, // Dynamic type based on button click
+              data: {
+                  labels: {{ data_summary.keys() | list | tojson | safe }},
+                  datasets: [{
+                      label: 'Emissions',
+                      data: {{ data_summary.values() | list | tojson | safe }},
+                      backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                      borderColor: 'rgba(255, 99, 132, 1)',
+                      borderWidth: 1
+                  }]
+              },
+              options: {
+                  scales: {
+                      y: {
+                          beginAtZero: true
+                      }
+                  }
+              }
+          });
+      }
+
+      // Event listeners for buttons
+      document.getElementById('lineChartButton').addEventListener('click', function() {
+          createChart('line');
+      });
+
+      document.getElementById('barChartButton').addEventListener('click', function() {
+          createChart('bar');
+      });
+
+      createChart('line'); // Initialize with line chart
+  });
+</script>
+
+{% endblock %}
