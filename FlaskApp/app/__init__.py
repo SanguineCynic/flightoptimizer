@@ -22,7 +22,7 @@ from app import views
 
 conn = psycopg2.connect(
     host="localhost",
-    database="FlightOptimizer",
+    database="flightoptimizer",
     user=os.environ.get('DATABASE_USERNAME', 'postgres'),
     password= os.environ.get('DATABASE_PASSWORD')
 )
@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS airports (
     iata_code VARCHAR(4) PRIMARY KEY,
     continent VARCHAR(255)
 );""")
+
 
 # cur.execute("""
 # -- Reports tabLe

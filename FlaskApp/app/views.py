@@ -30,7 +30,7 @@ from sklearn.preprocessing import LabelEncoder
 def home():
     """Render website's home page."""
     conn, cur = get_db_connection()
-
+    
     # Queries the Icao model from models.py to check for table population. If empty, populate.
     if Icao.query.first() is None:
         with open(os.getcwd()+"\\app\\static\\sql\\icao_query.sql", "r", encoding="utf-8") as file:
@@ -293,6 +293,17 @@ def get_emissions(country, timeframe, start_year, month, quarter, end_year, end_
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
+    
+    if UserProfile.query.count() == 0:
+        # If the table is empty, add a new user profile
+        user = UserProfile(first_name="Crypto",
+                           last_name="Ciphers Unltd.",
+                            username="admin",
+                            password="admin")
+        db.session.add(user)
+        db.session.commit()
+        print("Admin user created")
+
     form = LoginForm()
 
     if form.validate_on_submit():
@@ -370,7 +381,7 @@ def logout():
 def get_db_connection():
     conn = psycopg2.connect(
         host="localhost",
-        database="FlightOptimizer",
+        database="flightoptimizer",
         user=os.environ.get('DATABASE_USERNAME', 'postgres'),
         password= os.environ.get('DATABASE_PASSWORD')
     )    
