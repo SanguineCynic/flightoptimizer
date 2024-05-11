@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static',filename='css/chatbot.css') }}">
+{% endblock %}
+
+{% block main %}
+<div class="container my-5">
+    <h1 class="text-primary mb-4 text-center">Flight Emissions Chatbot</h1>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div id="chat" class="chat-container mb-3"></div>
+            <form id="chatForm">
+                <div class="mb-3">
+                    <input type="text" id="icao_code" class="form-control" placeholder="Enter ICAO Code" required>
+                </div>
+                <div class="mb-3">
+                    <input type="number" id="flight_distance" class="form-control" placeholder="Enter Flight Distance (km)" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Send</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+    $('#chatForm').on('submit', async (event) => {
+        event.preventDefault();
+        const icaoCode = $('#icao_code').val();
+        const flightDistance = $('#flight_distance').val();
+
+        $('#chat').append(`<div class="chat-bubble user"><strong>You:</strong> ICAO Code: ${icaoCode}, Flight Distance: ${flightDistance} km</div>`);
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ icao_code: icaoCode, flight_distance: flightDistance })
+            });
+            const data = await response.json();
+
+            if (data.message) {
+                $('#chat').append(`<div class="chat-bubble bot"><strong>Bot:</strong> ${data.message}</div>`);
+            } else {
+                $('#chat').append(`<div class="chat-bubble bot text-danger"><strong>Bot:</strong> ${data.error}</div>`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            $('#chat').append(`<div class="chat-bubble bot text-danger"><strong>Bot:</strong> An error occurred.</div>`);
+        }
+
+        $('#icao_code').val('');
+        $('#flight_distance').val('');
+        $('#chat').scrollTop($('#chat')[0].scrollHeight);
+    });
+</script>
+{% endblock %}

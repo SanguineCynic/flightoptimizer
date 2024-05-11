@@ -1,5 +1,5 @@
 # Generic python packages
-import os, requests, psycopg2
+import os, requests, psycopg2, json
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 
@@ -71,7 +71,11 @@ def airport_weather(icao):
     sigmet_impacts = analyze_sigmet_fuel_impact(sigmet_data)
 
     response = requests.request("GET", url, headers={'X-API-Key': api_key})
-    data = response.json()["data"][0]
+    try:
+        data = response.json()["data"][0]
+    except IndexError:
+        flash('Incorrect ICAO code', 'warning')
+        return redirect(url_for('home'))
 
     temperature_data = data["temperature"]
     degsC = temperature_data["celsius"]
@@ -142,7 +146,44 @@ def flights_to_dest(src, dest, date):
         for itinerary in response.data:
             flights_info.append(itinerary)
             
+        # Parse the JSON data
+        data = flights_info
 
+        # Initialize a dictionary to store the extracted information
+        itinerary_info = {}
+
+        # Iterate through each itinerary
+        for itinerary in data['itineraries']:
+            # Extract the number of segments
+            num_segments = len(itinerary['segments'])
+
+            # Initialize lists to store departure and arrival IATA codes, and aircraft codes
+            dep_iata_codes = []
+            arr_iata_codes = []
+            aircraft_codes = []
+
+            # Iterate through each segment to extract the required information
+            for segment in itinerary['segments']:
+                dep_iata_codes.append(segment['departure']['iataCode'])
+                arr_iata_codes.append(segment['arrival']['iataCode'])
+                aircraft_codes.append(segment['aircraft']['code'])
+
+            # Store the extracted information in the dictionary
+            itinerary_info[itinerary['id']] = {
+                'num_segments': num_segments,
+                'dep_iata_codes': dep_iata_codes,
+                'arr_iata_codes': arr_iata_codes,
+                'aircraft_codes': aircraft_codes
+            }
+
+        # Print the extracted information
+        for itinerary_id, info in itinerary_info.items():
+            print(f"Itinerary ID: {itinerary_id}")
+            print(f"Number of Segments: {info['num_segments']}")
+            print("Departure IATA Codes:", info['dep_iata_codes'])
+            print("Arrival IATA Codes:", info['arr_iata_codes'])
+            print("Aircraft Codes:", info['aircraft_codes'])
+            print("\n")
         return jsonify(flights_info)
     except ResponseError as error:
         return jsonify({"error": str(error)})
@@ -247,6 +288,50 @@ def generateReport():
             redirect(url_for('generateReport'))
     return render_template('reportform.html', form=form)
 
+@login_required
+@app.route('/chat/')
+def load_chatbot():
+    return render_template('chatbot.html')
+
+@app.route('/api/chat/', methods=['POST'])
+def chat():
+    try:
+        data = request.json
+        icao_code = data.get('icao_code', '').strip()
+        flight_distance_str = data.get('flight_distance', '0').strip()
+
+        if not icao_code:
+            return jsonify({'error': 'Missing ICAO code'}), 400
+        try:
+            flight_distance = float(flight_distance_str)
+        except ValueError:
+            return jsonify({'error': 'Invalid flight distance format'}), 400
+
+        # Fetch weather data
+        weather_data = get_weather(os.getenv('CX_WEATHER_API_KEY'), icao_code)
+        wind_speed = extract_wind_speed(weather_data)
+        temperature = extract_temperature(weather_data)
+        is_rainfall, is_thunderstorms = check_weather_conditions(weather_data)
+
+        # Calculate emissions
+        emissions = calculate_emissions(flight_distance, wind_speed)
+        recommendations = generate_recommendations(emissions)
+
+        # Compose response message
+        weather_info = []
+        if temperature is not None:
+            weather_info.append(f"Temperature: {temperature} °C")
+        if wind_speed is not None:
+            weather_info.append(f"Wind Speed: {wind_speed} kt")
+        weather_info.append(f"Rainfall: {'Yes' if is_rainfall else 'No'}")
+        weather_info.append(f"Thunderstorms: {'Yes' if is_thunderstorms else 'No'}")
+
+        message = f"Current Weather Conditions:\n" + '\n'.join(weather_info) + \
+                  f"\n\nEmissions: {emissions:.2f} kg CO2. {recommendations}"
+
+        return jsonify({'message': message})
+    except Exception as e:
+        return jsonify({'error': f"Error processing request: {str(e)}"}), 500
 
 # Works and retruns  a dictionary
 def get_emissions(country, timeframe, start_year, month, quarter, end_year, end_month, end_quarter):
@@ -489,3 +574,47 @@ def get_country_name_by_code(country_code):
     countries = fetch_country_codes()
     # Return the country name matching the country code
     return countries.get(country_code, "Unknown country code")
+
+def extract_wind_speed(weather_data):
+    try:
+        return weather_data['data'][0]['wind']['speed_kts']
+    except (IndexError, KeyError):
+        return None
+
+def extract_temperature(weather_data):
+    try:
+        return weather_data['data'][0]['temperature']['value']
+    except (IndexError, KeyError):
+        return None
+
+def check_weather_conditions(weather_data):
+    try:
+        weather_conditions = weather_data['data'][0]['weather']
+        is_rainfall = any(condition['value'] in ['RA', 'TSRA'] for condition in weather_conditions)
+        is_thunderstorms = any(condition['value'] == 'TS' for condition in weather_conditions)
+        return is_rainfall, is_thunderstorms
+    except (IndexError, KeyError):
+        return False, False
+
+def calculate_emissions(flight_distance, wind_speed):
+    baseline_emissions = flight_distance * 0.1
+    if wind_speed is not None and wind_speed > 10:
+        adjusted_emissions = baseline_emissions * 0.9
+    else:
+        adjusted_emissions = baseline_emissions
+    return adjusted_emissions
+
+def generate_recommendations(emissions):
+    if emissions < 100:
+        return "Your flight emissions are relatively low. Consider offsetting them with a carbon offset program."
+    elif emissions >= 100 and emissions < 200:
+        return "Your flight emissions are moderate. You may want to choose a more fuel-efficient airline for future flights."
+    else:
+        return "Your flight emissions are high. Consider alternative transportation options or carbon offset programs."
+    
+# Function to fetch weather data from CheckWX API
+def get_weather(api_key, icao_code):
+    url = f'https://api.checkwx.com/metar/{icao_code}/decoded'
+    headers = {'X-API-Key': api_key}
+    response = requests.get(url, headers=headers)
+    return response.json()
