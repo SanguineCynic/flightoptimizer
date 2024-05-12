@@ -19,3 +19,8 @@ tr{
     background-color: #007bff; /* Example color */
     color: white; /* Text color */
 }
+
+thead, thead tr, thead tr th{
+    background-color: darkslategray !important;
+    color: white !important;
+}

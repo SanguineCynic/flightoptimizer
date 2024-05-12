@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block main %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- Card 1 -->
+        <div class="col-md-3 mb-4">
+            <div class="card h-100">
+                <a href="{{ url_for('load_chatbot') }}"> <div class="card-body">
+                    <img class="col-md-12" src="{{ url_for('static', filename='images/robot.svg') }}" alt="">
+                    <i class="fas fa-user"></i> <!-- Replace with your icon -->
+                    <h5 class="card-title">Emissions Estimate Bot (Eeb2)</h5>
+                    <hr>
+                    <p class="card-text text-center">Robot helper Eeb2 provides estimates on fuel emissions given a flight path.</p>
+                </div>
+            </div>
+        </div></a>
+        <!-- Card 2 -->
+        <div class="col-md-3 mb-4">
+            <div class="card h-100">
+                <a href="{{ url_for('home') }}"><div class="card-body">
+                    <img class="col-md-12" src="{{ url_for('static', filename='images/weather.svg') }}" alt="">
+                    <i class="fas fa-cog"></i> <!-- Replace with your icon -->
+                    <h5 class="card-title">Weather Advisories</h5>
+                    <hr>
+                    <p class="card-text text-center">Determine METAR, TAF and SIGMET weather reports for a specified airport.</p>
+                </div></a>
+            </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="col-md-3 mb-4">
+            <div class="card h-100">
+                <a href="{{ url_for('generateReport') }}"><div class="card-body">
+                    <img class="col-md-12 pb-4" src="{{ url_for('static', filename='images/report.svg') }}" alt="">
+                    <i class="fas fa-chart-pie"></i> <!-- Replace with your icon -->
+                    <h5 class="card-title">CO<sub>2</sub> Emissions Report</h5>
+                    <hr>
+                    <p class="card-text text-center">Report generator for CO<sub>2</sub> emissions from past data.</p>
+                </div></a>
+            </div>
+        </div>
+        <!-- Card 4 -->
+        <div class="col-md-3 mb-4">
+            <div class="card h-100">
+                <a href="{{ url_for('flights') }}"> <div class="card-body">
+                    <img class="col-md-12 pb-4" src="{{ url_for('static', filename='images/flight.svg') }}" alt="">
+                    <i class="fas fa-envelope"></i> <!-- Replace with your icon -->
+                    <h5 class="card-title"> Flight Selector</h5>
+                    <hr>
+                    <p class="card-text text-center">Select a flight date, departure, and arrival locations to view prospective flights and their predicted emissions.</p>
+                </div></a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>document.getElementById("dashboardAnchor").classList.add("active")</script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+{% endblock %}

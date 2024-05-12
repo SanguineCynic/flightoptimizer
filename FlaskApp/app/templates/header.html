@@ -1,23 +1,34 @@
 <header id="header" class="fixed-top d-flex align-items-center">
   <div class="container d-flex align-items-center justify-content-between">
 
-    <div class="logo">
-      <h1 class="text-light"><a href="{{ url_for('home') }}"><span>CryptoCiphers</span></a></h1>
+    <div class="logo d-flex flex-row">
+      <h1 class="text-light"><a href="{{ url_for('dashboard') }}"><span>AetherInsights</span></a></h1>
+      <h6>Data insights for a<br> sustainable future</h6>
       <!-- Uncomment below if you prefer to use an image logo -->
       {# <!-- <a href="index.html"><img src="{{ url_for('static',filename='logo.jpg')}}" alt="" class="img-fluid" id="logo"></a> --> #}
     </div>
   
     <nav id="navbar" class="navbar">
       <ul>
-        <li><a id="dashboardAnchor" class="nav-link scrollto" href="{{ url_for('home') }}">Dashboard</a></li>
-        <li><a id="predictionAnchor" class="nav-link scrollto" href="{{ url_for('fuelPrediction') }}">Fuel Predictions</a></li>
-        <li><a id="fightsAnchor" class="nav-link scrollto" href="{{ url_for('flights') }}">Flights</a></li>
-        <li><a id="reportAnchor" class="nav-link scrollto" href="{{ url_for('generateReport') }}">Reports</a></li>
-        <!-- <li><a class="nav-link scrollto" href="#services">Pricing</a></li>
-        <li><a class="nav-link scrollto" href="#team">Team</a></li> -->
-        <li class="dropdown"><a href="#"><span>Profile</span> <i class="bi bi-chevron-down"></i></a>
+        <li><a id="dashboardAnchor" class="nav-link scrollto" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li><a id="weatherAnchor" class="nav-link scrollto" href="{{ url_for('home') }}">Weather</a></li>
+        <li><a id="flightsAnchor" class="nav-link scrollto" href="{{ url_for('flights') }}">Flights</a></li>
+        <li class="dropdown" id="reportAnchor">
+          <a href="#" class="dropdown">
+              <span>Reports</span>
+              <i class="bi bi-chevron-down"></i>
+          </a>
           <ul>
-            <li><a href="#">Edit Profile</a></li>
+              <li><a class="nav-link" href="{{ url_for('generateReport') }}">Country Emissions Report</a></li>
+              <li><a class="nav-link" href="#">Rankings by Country</a></li>
+          </ul>
+      </li>
+      
+        <!-- <li><a class="nav-link scrollto" href="#services">Pricing</a></li>
+          <li><a class="nav-link scrollto" href="#team">Team</a></li> -->
+          <li class="dropdown" id="predictionAnchor"><a href="#"><span>AI Predictions</span> <i class="bi bi-chevron-down"></i></a>
+            <ul>
+            <li><a class="nav-link" href="{{ url_for('fuelPrediction') }}">Fuel Predictions</a></li>
             <!-- <li class="dropdown"><a href="#"><span>Deep Drop Down</span> <i class="bi bi-chevron-right"></i></a>
               <ul>
                 <li><a href="#">Deep Drop Down 1</a></li>
@@ -28,8 +39,7 @@
               </ul>
             </li> -->
             <!-- <li><a href="#">Training</a></li> -->
-            <li><a href="#">Settings</a></li>
-            <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            <li><a href="{{ url_for('load_chatbot') }}">Chatbot</a></li>
           </ul>
         </li>
         <!-- <li><a class="nav-link scrollto" href="#contact">Contact</a></li> -->

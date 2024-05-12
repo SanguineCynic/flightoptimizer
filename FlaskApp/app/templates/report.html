@@ -6,8 +6,12 @@
 
   <button id="lineChartButton" class="btn btn-primary">Line Chart</button>
   <button id="barChartButton" class="btn btn-primary">Bar Chart</button>
+  <button id="printButton" class="btn btn-primary">Print</button> <!-- Added Print Button -->
 
-  <canvas id="emissionChart" width="400" height="200"></canvas>
+  <!-- If ever trying to resize this container, be sure to adjust print function as well in js -->
+  <div id="chartContainer" class="container col-lg-8">
+    <canvas id="emissionChart"></canvas>
+  </div>
 
   <h2>Emissions Summary</h2>
   <table class="table">
@@ -27,6 +31,8 @@
     </tbody>
   </table>
 </div>
+
+
 {% endblock %}
 
 {% block js %}
@@ -57,12 +63,16 @@
                   scales: {
                       y: {
                           beginAtZero: true
+                      },
+                      x: {
+                           clip: false // Disables clipping
                       }
                   }
               }
           });
       }
 
+    
       // Event listeners for buttons
       document.getElementById('lineChartButton').addEventListener('click', function() {
           createChart('line');
@@ -71,6 +81,11 @@
       document.getElementById('barChartButton').addEventListener('click', function() {
           createChart('bar');
       });
+
+      document.getElementById('printButton').addEventListener('click', function() {
+        window.print();
+});
+
 
       createChart('line'); // Initialize with line chart
   });

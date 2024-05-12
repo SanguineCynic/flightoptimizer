@@ -1,10 +1,10 @@
 :root {
     --deepBlue: #242582; /* A deep shade of blue */
     --darkIndigo: #553D67; /* A dark shade of indigo or purple */
-    --brightRed: #F64C72; /* A bright red color */
+    --brightRed: hsl(347, 80%, 75%); /* A bright red color */
     --softPurple: #99738E; /* A soft shade of purple */
     --coolBlue: #2F2FA2; /* A cool shade of blue */
-    --offBlue: hsl(240, 60%, 93%); /* Primary colour with HSL L value increased to 93%. Off-white colour*/
+    --offBlue: #99bdff; /* Primary colour with HSL L value increased to 93%. Off-white colour*/
   }
 
   /*--------------------------------------------------------------
@@ -42,3 +42,8 @@ a {
   border: 1px solid crimson;
   background-color: firebrick;
 }
+
+#signin {
+  background: linear-gradient(0deg, blue, rgb(8, 8, 210), blue);
+}
+

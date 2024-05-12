@@ -12,13 +12,18 @@
     {{ form.username(class='form-control', placeholder="Enter your username") }}
     {{ form.username.label() }}
   </div>
+  <br>
   <div class="form-floating">
     {{ form.password(class='form-control', placeholder="Enter your password") }}
     {{ form.password.label() }}
   </div>
-  <button class="btn btn-lg btn-secondary w-100 mt-3" type="submit">Sign in</button>
+  <button class="btn btn-lg btn-primary w-100 mt-3" type="submit" id="signin">Sign in</button>
 </form>
 </div>
 </div>
 </div>
+<br>
+<p><strong>Disclaimer:</strong> AetherInsights is a tool intended for airport authorities to gather information on emissions to aid in analysis. Misuse of the program or mishaps caused fully or in part by the data gathered from the application is not the responsibility of CryptoCiphers Unltd.</p>
+<br>
+<p>If you have forgotten your password or require account creation, please contact your local system administrator.</p>
 {% endblock %}

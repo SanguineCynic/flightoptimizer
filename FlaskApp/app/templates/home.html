@@ -6,6 +6,7 @@
 
 {% block main %}
 {% include 'flash_messages.html' %}
+<h1>Search Weather by ICAO Code</h1>
 <!-- Search Bar -->
 <div class="input-group mb-3">
     <div class="input-group-prepend">
@@ -15,8 +16,8 @@
    </div>
    
 <div class="scrollable-table">
-    <table id="icao_table">
-        <thead>
+    <table id="icao_table" class="table table-secondary table-striped">
+        <thead class="thead-dark">
             <tr>
                 <th>Region Name</th>
                 <th>ICAO Code</th>
@@ -34,26 +35,12 @@
         </tbody>
     </table>
 </div>
-
-<div class="container">
-  <div class="row justify-content-center">
-      <div class="col-md-8">
-          <div class="card shadow mt-5">
-              <div class="card-body">
-                  <h5 class="card-title">AI Aviation Fuel Emissions Optimizer</h5>
-                  <p class="card-text">
-                      Our AI-driven solution optimizes fuel emissions in aviation by leveraging advanced machine learning techniques. It analyzes real-time flight data to predict fuel consumption and emissions, enabling airlines to reduce their environmental impact.
-                  </p>
-                  <a href="#" class="btn btn-primary">Learn More</a>
-              </div>
-          </div>
-      </div>
-  </div>
-</div>
+<br>
+<p>Search by any field to select an ICAO code to get weather information for the area around the selected airport.</p>
 {% endblock %}
 
 {% block js %}
-<script>document.getElementById("dashboardAnchor").classList.add("active")</script>
+<script>document.getElementById("weatherAnchor").classList.add("active")</script>
 <script>
     document.getElementById('searchField').addEventListener('keyup', function() {
     var filter = this.value.toUpperCase();

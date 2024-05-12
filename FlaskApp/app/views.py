@@ -47,6 +47,10 @@ def home():
 
     return render_template('home.html', icao_codes=icao_codes, region_names=region_names, airports=airports)
 
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html')
 
 @app.route('/about/')
 def about():
@@ -57,6 +61,7 @@ def about():
 @app.route('/weather/')
 def weather():
     return redirect(url_for('home'))
+
 
 @app.route('/weather/<icao>', methods=['GET'])
 @login_required
@@ -128,8 +133,8 @@ from flask import request
 @login_required
 def flights_to_dest(src, dest, date):
     rockMe = Client(
-        client_id="tT7RKPlYmqow0doAYBPEi0Emi9N78wWX",
-        client_secret="UFSIgv5qhZxFLAog"
+        client_id=os.environ.get("AMADEUS_CLIENT_ID"),
+        client_secret=os.environ.get("AMADEUS_API_KEY")
     )
     
     try:
@@ -145,57 +150,51 @@ def flights_to_dest(src, dest, date):
         flights_info=[]
         for itinerary in response.data:
             flights_info.append(itinerary)
+
+        # Initialize lists to hold the extracted data
+        segment_counts = []
+        departure_iata_codes = []
+        arrival_iata_codes = []
+        carrier_aircraft_pairs = []
+
+        # Iterate through each flight offer
+        for flight_offer in flights_info:
             
-        # Parse the JSON data
-        data = flights_info
+            # Iterate through each itinerary
+            for itinerary in flight_offer["itineraries"]:
+                # Extract the number of segments
+                segment_count = len(itinerary["segments"])
+                segment_counts.append(segment_count)
+                
+                # Extract departure and arrival iata codes
+                departure_iata_code = itinerary["segments"][0]["departure"]["iataCode"]
+                arrival_iata_code = itinerary["segments"][0]["arrival"]["iataCode"]
+                departure_iata_codes.append(departure_iata_code)
+                arrival_iata_codes.append(arrival_iata_code)
+                
+                # Pair up carrier and aircraft codes
+                carrier_code = itinerary["segments"][0]["carrierCode"]
+                aircraft_code = itinerary["segments"][0]["aircraft"]["code"]
+                carrier_aircraft_pairs.append((carrier_code, aircraft_code))
 
-        # Initialize a dictionary to store the extracted information
-        itinerary_info = {}
+        # Convert lists to tuples for easier manipulation
+        segment_counts = tuple(segment_counts)
+        departure_iata_codes = tuple(departure_iata_codes)
+        arrival_iata_codes = tuple(arrival_iata_codes)
+        carrier_aircraft_pairs = tuple(carrier_aircraft_pairs)
 
-        # Iterate through each itinerary
-        for itinerary in data['itineraries']:
-            # Extract the number of segments
-            num_segments = len(itinerary['segments'])
-
-            # Initialize lists to store departure and arrival IATA codes, and aircraft codes
-            dep_iata_codes = []
-            arr_iata_codes = []
-            aircraft_codes = []
-
-            # Iterate through each segment to extract the required information
-            for segment in itinerary['segments']:
-                dep_iata_codes.append(segment['departure']['iataCode'])
-                arr_iata_codes.append(segment['arrival']['iataCode'])
-                aircraft_codes.append(segment['aircraft']['code'])
-
-            # Store the extracted information in the dictionary
-            itinerary_info[itinerary['id']] = {
-                'num_segments': num_segments,
-                'dep_iata_codes': dep_iata_codes,
-                'arr_iata_codes': arr_iata_codes,
-                'aircraft_codes': aircraft_codes
-            }
-
-        # Print the extracted information
-        for itinerary_id, info in itinerary_info.items():
-            print(f"Itinerary ID: {itinerary_id}")
-            print(f"Number of Segments: {info['num_segments']}")
-            print("Departure IATA Codes:", info['dep_iata_codes'])
-            print("Arrival IATA Codes:", info['arr_iata_codes'])
-            print("Aircraft Codes:", info['aircraft_codes'])
-            print("\n")
+        # Now you have the data organized as requested
+        print("Segment Counts:", segment_counts, " ", len(segment_counts))
+        print("Departure IATA Codes:", departure_iata_codes, " ", len(departure_iata_codes))
+        print("Arrival IATA Codes:", arrival_iata_codes, " ", len(arrival_iata_codes))
+        print("Carrier-Aircraft Pairs:", carrier_aircraft_pairs, " ", len(carrier_aircraft_pairs))
+        
+        # Render the template with the data
+        return render_template('specify_flights.html', segment_counts=segment_counts, departure_iata_codes=departure_iata_codes, arrival_iata_codes=arrival_iata_codes, carrier_aircraft_pairs=carrier_aircraft_pairs, len=len(arrival_iata_codes))
         return jsonify(flights_info)
     except ResponseError as error:
-        return jsonify({"error": str(error)})
+        return render_template('error.html', error=str(error)), 500
     
-# @app.route("/flights/", methods=['GET'])
-# def flights():
-#     con, cursor = get_db_connection()
-#     cursor.execute("SELECT planemodel, source, destination, source_icao, destination_icao FROM flights")
-#     flights = cursor.fetchall()
-#     print(flights)
-#     return render_template("flights.html", flights=flights)
-
 
 @app.route('/prediction/', methods=['GET', 'POST'])
 def fuelPrediction():
@@ -405,7 +404,7 @@ def login():
                 # Gets user id, load into session
                 login_user(user[0])
                 # Remember to flash a message to the user
-                return redirect(url_for("home"))  
+                return redirect(url_for("dashboard"))  
             else:
                 flash("Incorrect password","error")
         except IndexError:

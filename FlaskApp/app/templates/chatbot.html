@@ -6,7 +6,7 @@
 
 {% block main %}
 <div class="container my-5">
-    <h1 class="text-primary mb-4 text-center">Flight Emissions Chatbot</h1>
+    <h1 class="text-secondary mb-4 text-center">Flight Emissions Chatbot</h1>
     <div class="card shadow-sm">
         <div class="card-body">
             <div id="chat" class="chat-container mb-3"></div>
@@ -26,6 +26,7 @@
 {% endblock %}
 
 {% block js %}
+<script>document.getElementById("predictionAnchor").classList.add("active")</script>
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
     $('#chatForm').on('submit', async (event) => {
@@ -44,13 +45,13 @@
             const data = await response.json();
 
             if (data.message) {
-                $('#chat').append(`<div class="chat-bubble bot"><strong>Bot:</strong> ${data.message}</div>`);
+                $('#chat').append(`<div class="chat-bubble bot"><strong>Eeb2:</strong> ${data.message}</div>`);
             } else {
-                $('#chat').append(`<div class="chat-bubble bot text-danger"><strong>Bot:</strong> ${data.error}</div>`);
+                $('#chat').append(`<div class="chat-bubble bot text-danger"><strong>Eeb2:</strong> ${data.error}</div>`);
             }
         } catch (error) {
             console.error('Error:', error);
-            $('#chat').append(`<div class="chat-bubble bot text-danger"><strong>Bot:</strong> An error occurred.</div>`);
+            $('#chat').append(`<div class="chat-bubble bot text-danger"><strong>Eeb2:</strong> An error occurred.</div>`);
         }
 
         $('#icao_code').val('');
