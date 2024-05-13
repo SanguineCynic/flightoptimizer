@@ -401,6 +401,7 @@ def load_chatbot():
 
 @app.route('/api/chat/', methods=['POST'])
 def chat():
+    conn, cur = get_db_connection()
     try:
         data = request.json
         icao_code = data.get('icao_code', '').strip()
@@ -410,6 +411,13 @@ def chat():
         if not icao_code:
             return jsonify({'error': 'Missing ICAO code'}), 400
         try:
+            cur.execute("SELECT icao from icao_codes")
+            icao_codes = cur.fetchall()
+            # Format as iterable list
+            icao_codes = [code[0] for code in icao_codes]
+            print(icao_code)
+            if not (icao_code in icao_codes):
+                return jsonify({'message': 'Invalid ICAO code'}), 404
             flight_distance = float(flight_distance_str)
         except ValueError:
             return jsonify({'error': 'Invalid flight distance format'}), 400
