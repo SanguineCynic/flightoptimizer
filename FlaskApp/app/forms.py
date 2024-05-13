@@ -3,6 +3,11 @@ from wtforms import StringField, FloatField, SubmitField, SelectField, PasswordF
 from wtforms.validators import InputRequired, Length, NumberRange, DataRequired, ValidationError
 import requests
 
+def validate_four_digit_year(form, field):
+    year = field.data
+    if year and (year < 1000 or year > 9999):
+        raise ValidationError("Year must be a four-digit number.")
+    
 def fetch_country_codes():
     url = 'https://restcountries.com/v3.1/all'
     response = requests.get(url)
@@ -35,12 +40,12 @@ class EmissionForm(FlaskForm):
                           validators=[DataRequired()], render_kw={"class": "select2-enable"})
     timeframe = SelectField('Timeframe', choices=[('annual', 'Annual'), ('monthly', 'Monthly'), ('quarterly', 'Quarterly')],
                             validators=[DataRequired()])
-    start_year = IntegerField('Start Year', validators=[DataRequired(), NumberRange(min=2013, message="The earliest start year allowed is for an annual timeframe is 2013.")])
+    start_year = IntegerField('Start Year', validators=[DataRequired(), NumberRange(min=2013, message="The earliest start year allowed is for an annual timeframe is 2013."), validate_four_digit_year])
     start_month = SelectField('Start Month', choices=[(str(i), str(i).zfill(2)) for i in range(1, 13)],
-                        validators=[DataRequired()], default=None)
+                              validators=[DataRequired()], default=None)
     start_quarter = SelectField('Start Quarter', choices=[(str(i), 'Q' + str(i)) for i in range(1, 5)],
-                          validators=[DataRequired()], default=None)
-    end_year = IntegerField('End Year', validators=[DataRequired()])
+                                validators=[DataRequired()], default=None)
+    end_year = IntegerField('End Year', validators=[DataRequired(), validate_four_digit_year])
     end_month = SelectField('End Month', choices=[(str(i), str(i).zfill(2)) for i in range(1, 13)],
                             validators=[DataRequired()], default=None)
     end_quarter = SelectField('End Quarter', choices=[(str(i), 'Q' + str(i)) for i in range(1, 5)],
@@ -54,9 +59,8 @@ class EmissionForm(FlaskForm):
                 raise ValidationError("For monthly or quarterly timeframes, the earliest start year allowed is 2019.")
             
 class EmissionRankingForm(FlaskForm):
-    start_year = IntegerField('Year', validators=[NumberRange(min=2019)])
+    start_year = IntegerField('Year', validators=[NumberRange(min=2019), validate_four_digit_year])
     start_month = SelectField('Start Month', choices=[(str(i), str(i).zfill(2)) for i in range(1, 13)])
-    # end_year = IntegerField('End Year', validators=[NumberRange(min=2013)])
     end_month = SelectField('End Month', choices=[(str(i), str(i).zfill(2)) for i in range(1, 13)])
     order = SelectField('Order', choices=[('ascending', 'Ascending'), ('descending', 'Descending')], default='descending')
     submit = SubmitField('Get Ranking')

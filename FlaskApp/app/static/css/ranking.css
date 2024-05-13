@@ -159,15 +159,40 @@ form {
 }
 
 .oecd-link-container {
-  text-align: center;
-  margin-top: 20px;
+  background-color: #f9f9f9; /* Light grey background for distinction */
+  border-left: 5px solid #5cb85c; /* Green left border for emphasis */
+  padding: 20px; /* Padding for content inside the box */
+  margin-top: 20px; /* Space above the section */
+  margin-bottom: 20px; /* Space below the section */
 }
-
-.oecd-btn {
-  margin-top: 20px;
-  margin-bottom: 20px;
+.oecd-link-container h2 {
+  color: #333; /* Dark grey for the heading */
 }
-
-.oecd-description {
-  margin-top: 10px;
+.oecd-link-container p,
+.oecd-link-container ol {
+  font-size: 1rem; /* Standard font size for text */
+  color: #505050; /* Lighter grey for text for easier reading */
+  line-height: 1.6; /* Line height for better readability */
+}
+.oecd-link-container a {
+  color: #007bff; /* Standard link color */
+  text-decoration: none; /* No underline to keep it clean */
+  display: block; /* Make the anchor block to take the full width for centering */
+  width: fit-content; /* Fit the content width of the button */
+  padding: 8px 12px; /* Padding inside the button */
+  background-color: #007bff; /* Background color of the button */
+  color: white; /* Text color inside the button */
+  border-radius: 5px; /* Rounded corners for the button */
+  margin: 1rem auto 1rem auto; /* Top and bottom margin of 1rem, auto left and right for centering */
+  transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+.oecd-link-container a:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+  text-decoration: none; /* Still no underline */
+}
+.oecd-link-container ol {
+  margin-left: 20px; /* Indent for the ordered list */
+}
+.oecd-link-container li {
+  margin-bottom: 10px; /* Space between list items for clarity */
 }

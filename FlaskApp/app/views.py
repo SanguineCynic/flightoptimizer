@@ -364,8 +364,8 @@ def country_ranking():
                 country_data[country_code] = country_data.get(country_code, 0) + emissions
                 total_emissions += emissions
 
-            # print('country_data', country_data)
-            # print('total_emissions', total_emissions)
+            print('country_data', country_data)
+            print('total_emissions', total_emissions)
             emissions_values = list(country_data.values())
             low_threshold, high_threshold = np.percentile(emissions_values, [33, 66])
             

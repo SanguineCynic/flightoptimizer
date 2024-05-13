@@ -1,6 +1,7 @@
 {% extends 'base.html' %} 
 {% block css %}
   <link rel="stylesheet" href="{{ url_for('static',filename='css/home.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static',filename='css/ranking.css') }}">
 {% endblock %}
 {% block main %}
 <div class="container mt-4">
@@ -44,6 +45,24 @@
     </table>
   </div>
 
+  <!-- Link to OECD Data Page -->
+<div class="oecd-link-container">
+  <p class="oecd-description">
+    To accurately validate our data, visit the OECD's Air Transport CO<sub>2</sub> Emissions page and configure the necessary filters as follows:
+    <ul>
+      <li><strong>Reference Area</strong>: Ensure you select the correct geographic region relevant to your data.</li>
+      <li><strong>Frequency of Observation</strong>: Choose the correct frequency (Annual, Monthly, or Quarterly) based on the data used in our model.</li>
+      <li><strong>Time Period</strong>: Adjust the start and end years and, if necessary, the start month/quarter and end month/quarter to match your dataset.</li>
+      <li><strong>Flight Type</strong>: Select <em>_T (All Flights)</em> to include all flight types in the data.</li>
+    </ul>
+    Leave all other settings at their default values ('All'). Please note that the OECD site provides raw emission data without aggregation or other statistical measures, which may differ from our modeled results that could include additional calculations.
+  </p>
+  <a href="https://data-explorer.oecd.org/vis?fs[0]=Topic%2C1%7CEnvironment%23ENV%23%7CAir%20and%20climate%23ENV_AC%23&pg=0&fc=Topic&bp=true&snb=13&vw=tb&df[ds]=dsDisseminateFinalDMZ&df[id]=DSD_AIR_TRANSPORT%40DF_AIR_TRANSPORT&df[ag]=OECD.SDD.NAD.SEEA&df[vs]=1.0&pd=%2C&dq=.M.......&ly[cl]=TIME_PERIOD&ly[rs]=FLIGHT_TYPE%2CMETHODOLOGY&ly[rw]=EMISSIONS_SOURCE&to[TIME_PERIOD]=false&lb=bt"
+    target="_blank"
+    class="btn btn-info">
+    Verify Data at OECD
+  </a>
+</div>
   {% endblock %} 
   
   {% block js %}
