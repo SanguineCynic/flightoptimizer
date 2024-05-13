@@ -1,0 +1,115 @@
+.main-heading-1 {
+    margin-bottom: 2rem;
+  }
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .results .mt-4 {
+    margin-top: 5rem;
+  }
+  
+  .results {
+    padding: 20px;
+    background-color: #f0faff;
+    border: 1px solid #0090c1;
+    border-radius: 5px;
+    text-align: center;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+  }
+  .results-header {
+    /* color: #005580; */
+    text-transform: uppercase;
+    font-size: 1.5rem;
+  }
+  .results-value {
+    font-size: 1.3rem;
+    /* color: #333; */
+    margin: 15px 0;
+    font-weight: bold;
+    color: #005580;
+  }
+  .results-label {
+    font-weight: normal;
+    color: black;
+  }
+
+  .dataset-info {
+    background-color: #f9f9f9;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  .dataset-info h3 {
+    color: #005580;
+    margin-bottom: 15px;
+  }
+  .dataset-info p {
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.5;
+  }
+  .google-sheet-preview {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  .google-sheet-preview img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px;
+  }
+  .view-full-sheet {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 15px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+  }
+  .view-full-sheet:hover {
+    background-color: #0056b3;
+  }
+  /* .divider {
+    margin-top: 4rem;
+    margin-bottom: 3rem;
+  } */
+
+  /* Google verification */
+  .verification-section {
+    background-color: #f9f9f9;  /* Light grey background for distinction */
+    border-left: 5px solid #5cb85c;  /* Green left border for emphasis */
+    padding: 20px;  /* Padding for content inside the box */
+    margin-top: 20px;  /* Space above the section */
+    margin-bottom: 20px;  /* Space below the section */
+  }
+  .verification-section h2 {
+    color: #333;  /* Dark grey for the heading */
+  }
+  .verification-section p, .verification-section ol {
+    font-size: 1rem;  /* Standard font size for text */
+    color: #666;  /* Lighter grey for text for easier reading */
+    line-height: 1.6;  /* Line height for better readability */
+  }
+  .verification-section a {
+    color: #007bff;  /* Standard link color */
+    text-decoration: none;  /* No underline to keep it clean */
+  }
+  .verification-section a:hover {
+    text-decoration: underline;  /* Underline on hover for usability */
+  }
+  .verification-section ol {
+    margin-left: 20px;  /* Indent for the ordered list */
+  }
+  .verification-section li {
+    margin-bottom: 10px;  /* Space between list items */
+  }

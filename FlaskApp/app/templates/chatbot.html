@@ -12,10 +12,10 @@
             <div id="chat" class="chat-container mb-3"></div>
             <form id="chatForm">
                 <div class="mb-3">
-                    <input type="text" id="icao_code" class="form-control" placeholder="Enter ICAO Code" required>
+                    <input type="text" id="icao_code_src" class="form-control" placeholder="Enter departure ICAO Code" required>
                 </div>
                 <div class="mb-3">
-                    <input type="number" id="flight_distance" class="form-control" placeholder="Enter Flight Distance (km)" required>
+                    <input type="text" id="icao_code_dest" class="form-control" placeholder="Enter arrival ICAO Code" required>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Send</button>
             </form>
@@ -23,40 +23,82 @@
     </div>
 </div>
 
+   <!-- Google  Verification Section -->
+   <div class="verification-section">
+    <h2>Verify Model Predictions</h2>
+    <p>To evaluate the accuracy of our Emissions Estimator Bot (eeb2), compare its predictions against the CO<sub>2</sub> emissions data listed on Google Flights for different airlines. Here’s how you can verify:</p>
+    <ol>
+      <li>Visit <a href="https://www.google.com/travel/flights" target="_blank">Google Flights</a>.</li>
+      <li>Enter the airport name or IATA code for your departure and arrival airports. If you are using ICAO codes in our model, you may convert them to IATA codes using this <a href="https://www.avcodes.co.uk/aptcodesearch.asp" target="_blank">conversion tool</a>, or simply use the airport name.</li>
+      <li>Review the CO<sub>2</sub> emissions values provided for different airlines on the selected route.</li>
+      <li>Compare these emissions data with the predictions from eeb2. Our model’s estimates should fall within the range of these values, considering variations due to different operational conditions by airlines.</li>
+    </ol>
+    <p>Our model incorporates predicted weather conditions in its calculations, offering a unique and precise approach to estimating emissions, enhancing the accuracy of your environmental impact assessments.</p>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block js %}
 <script>document.getElementById("predictionAnchor").classList.add("active")</script>
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+<!-- Calculate distance from icao, ajax api call -->
 <script>
-    $('#chatForm').on('submit', async (event) => {
-        event.preventDefault();
-        const icaoCode = $('#icao_code').val();
-        const flightDistance = $('#flight_distance').val();
+    $(document).ready(function() {
+        $('#chatForm').on('submit', async (event) => {
+            event.preventDefault();
 
-        $('#chat').append(`<div class="chat-bubble user"><strong>You:</strong> ICAO Code: ${icaoCode}, Flight Distance: ${flightDistance} km</div>`);
-
-        try {
-            const response = await fetch('/api/chat', {
+            var src = $('#icao_code_src').val();
+            var dest = $('#icao_code_dest').val();
+            
+            let flightDistance; // Declare flightDistance outside the fetch call
+            
+            fetch('/ajax/getDistance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ src: src, dest: dest })
+            })
+          .then(response => response.json())
+          .then(data => {
+                console.log('Distance:', data);
+                let flightDistance = data.distance; // Update flightDistance here
+                
+                // Now that flightDistance has the correct value, append to the chat
+                const icaoCode = $('#icao_code_dest').val();
+                $('#chat').append(`<div class="chat-bubble user"><strong>You:</strong> ICAO Code: ${icaoCode}, Flight Distance: ${flightDistance} km</div>`);
+                
+                try {
+            const response =  fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ icao_code: icaoCode, flight_distance: flightDistance })
-            });
-            const data = await response.json();
-
-            if (data.message) {
-                $('#chat').append(`<div class="chat-bubble bot"><strong>Eeb2:</strong> ${data.message}</div>`);
-            } else {
-                $('#chat').append(`<div class="chat-bubble bot text-danger"><strong>Eeb2:</strong> ${data.error}</div>`);
-            }
+                body: JSON.stringify({ icao_code: icaoCode, flight_distance: Math.round(flightDistance) })
+            })
+            .then(response => response.json())
+            .then(result => {
+                const message = result.message;
+                console.log(message);
+                if (message) {
+                    $('#chat').append(`<div class="chat-bubble bot"><strong>Eeb2:</strong> ${message}</div>`);
+                } else {
+                    $('#chat').append(`<div class="chat-bubble bot text-danger"><strong>Eeb2:</strong> An error has occured in message parsing. Try again later.</div>`);
+                }
+            })
+            
         } catch (error) {
             console.error('Error:', error);
             $('#chat').append(`<div class="chat-bubble bot text-danger"><strong>Eeb2:</strong> An error occurred.</div>`);
         }
+            })
+          .catch(error => {
+                console.error('Error:', error);
+            });
 
-        $('#icao_code').val('');
-        $('#flight_distance').val('');
-        $('#chat').scrollTop($('#chat')[0].scrollHeight);
+            
+        });
     });
 </script>
+
 {% endblock %}

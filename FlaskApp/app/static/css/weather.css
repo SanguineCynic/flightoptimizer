@@ -97,6 +97,24 @@ input:checked + .slider:before {
     gap: 0;
 }
 
+#TAFInfo:hover::after, #SIGInfo:hover::after{
+    display: block;
+    position: absolute;
+    left: 30%; /* Center horizontally */
+    transform: translateX(-50%); /* Center horizontally */
+    background-color: lightblue;
+    padding: 5px;
+    border-radius: 5px;
+    z-index: 10; /* Ensure it's above other elements */
+}
+
+#TAFInfo:hover::after{
+    content: "TAF stands for Terminal Aerodrome Forecast. It is a weather report specifically designed for aviation purposes, providing a concise statement of the expected meteorological conditions at an airport during a specified time period";
+}
+#SIGInfo:hover::after{
+    content: "Significant Meteorological Information - A weather advisory for pilots, alerting them to potentially hazardous conditions such as severe turbulence, dust storms, or volcanic ash, crucial for aviation safety.";
+}
+
 /* Media query for mobile devices */
 @media screen and (max-width: 768px) {
     #weatherMap {

@@ -1,0 +1,184 @@
+{% extends 'base.html' %} {% block main %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+<div class="container mt-4">
+  <h2 class="header-style-1">
+    Global Aviation CO<sub>2</sub> Emissions Ranking
+  </h2>
+  <h5 class="header-style-2">
+    From {{ start_month }}/{{ start_year }} to {{ end_month }}/{{ start_year }}
+  </h5>
+
+  <!-- Loading Spinner -->
+  <div
+    id="loadingSpinner"
+    style="
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    "
+  >
+    <i
+      class="fa fa-spinner fa-spin"
+      style="font-size: 24px; color: #007bff"
+    ></i>
+  </div>
+
+  <form
+    method="POST"
+    onsubmit="showSpinner()"
+    class="form-inline justify-content-center"
+  >
+    {{ form.hidden_tag() }}
+    <div class="d-flex align-items-center">
+      <div class="mr-2">
+        <label>{{ form.start_year.label }}</label>
+        {{ form.start_year(class="form-control") }}
+      </div>
+      <div class="mr-2">
+        <label>{{ form.start_month.label }}</label>
+        {{ form.start_month(class="form-control") }}
+      </div>
+      <div class="mr-2">
+        <label>{{ form.end_month.label }}</label>
+        {{ form.end_month(class="form-control") }}
+      </div>
+      <div>{{ form.submit(class="btn btn-primary") }}</div>
+    </div>
+  </form>
+
+  <!-- Stats and Color Key in a Flex Container -->
+  <div class="stats-and-key">
+    <!-- Statistics -->
+    <div class="emissions-stats">
+      <div class="stat-item">
+        <span class="stat-number">{{ total_emissions }}</span>
+        <span class="stat-label">Tons Total Emissions</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{{ average_emissions }}</span>
+        <span class="stat-label">Tons Average Emissions</span>
+      </div>
+    </div>
+
+    <!-- Color Key -->
+    <div class="emissions-key">
+      <h5>Color Key:</h5>
+      <div>
+        <span class="color-box low-emissions"></span> Low Emissions (Below 33rd
+        percentile)
+      </div>
+      <div>
+        <span class="color-box medium-emissions"></span> Medium Emissions (33rd
+        to 66th percentile)
+      </div>
+      <div>
+        <span class="color-box high-emissions"></span> High Emissions (Above
+        66th percentile)
+      </div>
+    </div>
+  </div>
+
+  <table class="table" id="emissionsTable">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Country</th>
+        <th>
+          Total Emissions (Tons)
+          <button onclick="sortTable()" class="sort-button">
+            <i class="fa-solid fa-sort"></i>
+          </button>
+        </th>
+        <th>Percentage of Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for country, emissions, percentage, color_class in countries %}
+      <tr class="{{ color_class }}">
+        <td></td>
+        <td>{{ country }}</td>
+        <td data-value="{{ emissions | replace(',', '') }}">{{ emissions }}</td>
+        <td>{{ percentage }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Link to OECD Data Page -->
+<div class="oecd-link-container">
+  <a
+    href="https://data-explorer.oecd.org/vis?fs[0]=Topic%2C1%7CEnvironment%23ENV%23%7CAir%20and%20climate%23ENV_AC%23&pg=0&fc=Topic&bp=true&snb=13&vw=tb&df[ds]=dsDisseminateFinalDMZ&df[id]=DSD_AIR_TRANSPORT%40DF_AIR_TRANSPORT&df[ag]=OECD.SDD.NAD.SEEA&df[vs]=1.0&pd=2023-01%2C2023-12&dq=.M.......&ly[cl]=TIME_PERIOD&ly[rs]=FLIGHT_TYPE%2CMETHODOLOGY&ly[rw]=EMISSIONS_SOURCE&to[TIME_PERIOD]=false&lb=bt"
+    target="_blank"
+    class="btn btn-info"
+  >
+    Verify Data at OECD
+  </a>
+  <p class="oecd-description">
+    For a detailed validation of the data presented, please visit the OECD's Air
+    Transport CO<sub>2</sub> Emissions page. Use the provided filters to align
+    with the Monthly data and time frame shown here. The OECD (Organisation for
+    Economic Co-operation and Development) provides authoritative and reliable
+    statistical data on a variety of global metrics, including environmental
+    performance.
+  </p>
+</div>
+
+{% endblock %} {% block js %}
+<script>
+  function showSpinner() {
+    document.getElementById("loadingSpinner").style.display = "block";
+  }
+
+  let desc = true; // Initially sort descending
+  function sortTable() {
+    const table = document.getElementById("emissionsTable");
+    let switching = true,
+      rows,
+      i,
+      x,
+      y,
+      shouldSwitch;
+
+    while (switching) {
+      switching = false;
+      rows = table.rows;
+      for (i = 1; i < rows.length - 1; i++) {
+        shouldSwitch = false;
+        x = rows[i].getElementsByTagName("TD")[2];
+        y = rows[i + 1].getElementsByTagName("TD")[2];
+        if (desc) {
+          if (parseFloat(x.dataset.value) < parseFloat(y.dataset.value)) {
+            shouldSwitch = true;
+            break;
+          }
+        } else {
+          if (parseFloat(x.dataset.value) > parseFloat(y.dataset.value)) {
+            shouldSwitch = true;
+            break;
+          }
+        }
+      }
+      if (shouldSwitch) {
+        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+        switching = true;
+      }
+    }
+    desc = !desc; // Toggle the direction
+  }
+
+  window.onload = function () {
+    const table = document.getElementById("emissionsTable");
+    for (let i = 1, row; (row = table.rows[i]); i++) {
+      row.cells[0].innerHTML = i;
+    }
+    sortTable(); // Initial sort when page loads
+  };
+</script>
+{% endblock %} 
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static',filename='css/ranking.css') }}">
+{% endblock %}

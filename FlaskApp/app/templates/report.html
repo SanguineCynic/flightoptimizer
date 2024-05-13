@@ -1,94 +1,121 @@
-{% extends 'base.html' %} {% block main %}
+{% extends 'base.html' %} 
+{% block css %}
+  <link rel="stylesheet" href="{{ url_for('static',filename='css/home.css') }}">
+{% endblock %}
+{% block main %}
 <div class="container mt-4">
-  <h1>CO<sub>2</sub> Fuel Emission Report for {{ country }}</h1>
-  <h2>Reporting Period: {{ start_year }} to {{ end_year }}</h2>
-  <h3>Total CO<sub>2</sub> Emissions: {{ total_emissions | round(2) }} Tons</h3>
+    <h2 class="header-style">CO<sub>2</sub> Fuel Emission Report for {{ country }}</h2>
+    <h4 class="header-style">
+      {{ timeframe | capitalize }} Report from {{ start_year }} to {{ end_year
+      }}
+    </h4>
+    <div class = "stats">
+      <h6><strong>Total CO<sub>2</sub> Emissions:</strong> {{ total_emissions }} Tons</h6>
+      <h6><strong>Highest Emission:</strong> {{ highest_emissions.emissions }} Tons in {{ highest_emissions.time_period }}</h6>
+      <h6><strong>Lowest Emission:</strong> {{ lowest_emissions.emissions }} Tons in {{ lowest_emissions.time_period }}</h6>
+      <h6><strong>Average Emissions:</strong> {{ average_emissions }} Tons</h6>
+  
+    </div>
+    
+    <div class="button-options">
+      <button id="lineChartButton" class="btn btn-primary">Line Chart</button>
+      <button id="barChartButton" class="btn btn-primary">Bar Chart</button>
+      <button id="printButton" class="btn btn-primary">Print</button> <!-- Added Print Button -->
+    </div>
 
-  <button id="lineChartButton" class="btn btn-primary">Line Chart</button>
-  <button id="barChartButton" class="btn btn-primary">Bar Chart</button>
-  <button id="printButton" class="btn btn-primary">Print</button> <!-- Added Print Button -->
+    <canvas class="bg-light rounded" id="emissionChart" width="400" height="200"></canvas>
 
-  <!-- If ever trying to resize this container, be sure to adjust print function as well in js -->
-  <div id="chartContainer" class="container col-lg-8">
-    <canvas id="emissionChart"></canvas>
+    <h2 class="table-heading">Emissions Summary</h2>
+    <table class="table table-primary">
+      <thead class="thead-dark">
+        <tr>
+          <th>{{ timeframe | capitalize }} Period</th>
+          <th>CO<sub>2</sub> Emissions (Tons)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for period, emissions in data_summary.items() %}
+        <tr>
+          <td>{{ period }}</td>
+          <td>{{ emissions | round(2) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 
-  <h2>Emissions Summary</h2>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>{{ timeframe | capitalize }} Period</th>
-        <th>CO<sub>2</sub> Emissions (Tons)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for period, emissions in data_summary.items() %}
-      <tr>
-        <td>{{ period }}</td>
-        <td>{{ emissions | round(2) }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+  {% endblock %} 
+  
+  {% block js %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('emissionChart').getContext('2d');
+        let currentChart;
 
+        function createChart(type) {
+            if (currentChart) {
+                currentChart.destroy(); // Destroy the current chart before creating a new one
+            }
+            currentChart = new Chart(ctx, {
+                type: type, // Dynamic type based on button click
+                data: {
+                    labels: {{ data_summary.keys() | list | tojson | safe }},
+                    datasets: [{
+                        label: 'Emissions',
+                        data: {{ data_summary.values() | list | tojson | safe }},
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
 
-{% endblock %}
+        // Event listeners for buttons
+        document.getElementById('lineChartButton').addEventListener('click', function() {
+            createChart('line');
+        });
 
-{% block js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>document.getElementById("reportAnchor").classList.add("active")</script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-      const ctx = document.getElementById('emissionChart').getContext('2d');
-      let currentChart;
-
-      function createChart(type) {
-          if (currentChart) {
-              currentChart.destroy(); // Destroy the current chart before creating a new one
-          }
-          currentChart = new Chart(ctx, {
-              type: type, // Dynamic type based on button click
-              data: {
-                  labels: {{ data_summary.keys() | list | tojson | safe }},
-                  datasets: [{
-                      label: 'Emissions',
-                      data: {{ data_summary.values() | list | tojson | safe }},
-                      backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                      borderColor: 'rgba(255, 99, 132, 1)',
-                      borderWidth: 1
-                  }]
-              },
-              options: {
-                  scales: {
-                      y: {
-                          beginAtZero: true
-                      },
-                      x: {
-                           clip: false // Disables clipping
-                      }
-                  }
-              }
-          });
-      }
-
-    
-      // Event listeners for buttons
-      document.getElementById('lineChartButton').addEventListener('click', function() {
-          createChart('line');
-      });
-
-      document.getElementById('barChartButton').addEventListener('click', function() {
+        document.getElementById('barChartButton').addEventListener('click', function() {
           createChart('bar');
-      });
+        });
+        
+        document.getElementById('printButton').addEventListener('click', function() {
+          window.print();
+        });
 
-      document.getElementById('printButton').addEventListener('click', function() {
-        window.print();
-});
+        createChart('line'); // Initialize with line chart
+    });
+  </script>
 
+  <style>
+    .header-style{
+      text-align: center;
+    }
+    .button-options {
+      display: flex;
+      flex-direction: row;
+      justify-content: left;
+      align-items: center;
+      gap: 40px 20px;
+      margin: 20px;
+      margin-left: 0px;
+    }
 
-      createChart('line'); // Initialize with line chart
-  });
-</script>
+    .stats {
+      margin-top: 2rem;
+    }
+    .table-heading{
+      margin-top: 2rem;
+    }
+  </style>
 
-{% endblock %}
+  {% endblock %}

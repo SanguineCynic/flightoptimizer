@@ -1,5 +1,8 @@
 {% extends 'base.html' %} {% block css %}
-
+<link
+  href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css"
+  rel="stylesheet"
+/>
 {% endblock %} {% block main %}
 {% include 'flash_messages.html' %}
 
@@ -10,7 +13,7 @@
 
     <div class="mb-3">
       {{ form.country.label(class="form-label") }} {{
-      form.country(class="form-select") }}
+      form.country(class="form-select select2-enable") }}
     </div>
 
     <div class="mb-3">
@@ -26,8 +29,8 @@
     <!-- Monthly fields -->
     <div id="monthly_fields" class="mb-3" style="display: none">
       <div class="mb-3">
-        {{ form.month.label(class="form-label") }} {{
-        form.month(class="form-select") }}
+        {{ form.start_month.label(class="form-label") }} {{
+        form.start_month(class="form-select") }}
       </div>
       <div>
         {{ form.end_month.label(class="form-label") }} {{
@@ -38,8 +41,8 @@
     <!-- Quarterly fields -->
     <div id="quarterly_fields" class="mb-3" style="display: none">
       <div class="mb-3">
-        {{ form.quarter.label(class="form-label") }} {{
-        form.quarter(class="form-select") }}
+        {{ form.start_quarter.label(class="form-label") }} {{
+        form.start_quarter(class="form-select") }}
       </div>
       <div>
         {{ form.end_quarter.label(class="form-label") }} {{
@@ -56,29 +59,29 @@
   </form>
 </div>
 
-{% endblock %} 
-{% block js %}
-<script>document.getElementById("reportAnchor").classList.add("active")</script>
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const timeframeSelect = document.querySelector("#timeframe");
-      const monthlyFields = document.querySelector("#monthly_fields");
-      const quarterlyFields = document.querySelector("#quarterly_fields");
-  
-      function toggleFields() {
-        monthlyFields.style.display = "none";
-        quarterlyFields.style.display = "none";
-  
-        if (timeframeSelect.value === "monthly") {
-          monthlyFields.style.display = "block";
-        } else if (timeframeSelect.value === "quarterly") {
-          quarterlyFields.style.display = "block";
-        }
+  document.addEventListener("DOMContentLoaded", function () {
+    const timeframeSelect = document.querySelector("#timeframe");
+    const monthlyFields = document.querySelector("#monthly_fields");
+    const quarterlyFields = document.querySelector("#quarterly_fields");
+
+    function toggleFields() {
+      monthlyFields.style.display = "none";
+      quarterlyFields.style.display = "none";
+
+      if (timeframeSelect.value === "monthly") {
+        monthlyFields.style.display = "block";
+      } else if (timeframeSelect.value === "quarterly") {
+        quarterlyFields.style.display = "block";
       }
-  
-      timeframeSelect.addEventListener("change", toggleFields);
-      toggleFields(); // Ensure correct fields are shown on initial load
-  
-    });
-  </script>
-  {% endblock %}
+    }
+
+    timeframeSelect.addEventListener("change", toggleFields);
+    toggleFields(); // Ensure correct fields are shown on initial load
+
+    // Initialize Select2 on elements with the class 'select2-enable'
+    $(".select2-enable").select2();
+  });
+</script>
+
+{% endblock %}

@@ -6,7 +6,7 @@
     transition: all 0.5s;
     z-index: 997;
     transition: all 0.5s;
-    background: #ECFEE8;
+    background: #fbfffa;
     box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.1);
   }
   
@@ -196,7 +196,7 @@
     right: 0;
     left: 0;
     bottom: 0;
-    background: #ECFEE8;
+    background: #fbfffa;
     transition: 0.3s;
   }
   

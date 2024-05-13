@@ -1,0 +1,173 @@
+.header-style-1,
+.header-style-2 {
+  text-align: center;
+}
+
+.header-style-2 {
+  margin-bottom: 30px;
+}
+
+form {
+  margin-bottom: 20px;
+  text-align: center;
+  justify-content: center;
+  flex-direction: row;
+}
+
+.stats-and-key {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  margin-top: 20px;
+}
+
+.emissions-stats {
+  flex-grow: 1;
+}
+
+.stat-item {
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.stat-number {
+  font-weight: bold;
+  font-size: 1.5rem;
+  margin-right: 5px;
+}
+
+.stat-label {
+  font-size: 1rem;
+}
+
+.emissions-key {
+  flex-grow: 0;
+  padding-left: 20px;
+}
+
+.color-box {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+.low-emissions {
+  background-color: #e6ffe6;
+}
+.medium-emissions {
+  background-color: #f9f9c5;
+}
+.high-emissions {
+  background-color: #ffcece;
+}
+
+.table th {
+  background-color: #f2f2f2;
+  color: #333;
+  font-weight: bold;
+  padding: 12px;
+  text-align: left;
+  border-bottom: 2px solid #ccc;
+}
+
+.sort-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  font-size: 16px;
+}
+
+.sort-button:hover {
+  color: #007bff;
+}
+
+.form-inline .form-control {
+  min-width: 100px;
+  width: auto;
+  margin-right: 10px;
+}
+
+.form-inline .form-row {
+  justify-content: center;
+}
+.form-inline {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.form-inline .form-control,
+.form-inline .btn {
+  min-width: 150px;
+  width: 150px;
+  flex: 1 1 auto;
+}
+
+.form-inline div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* .align-items-center {
+  display: flex;
+  flex-direction: row;
+} */
+
+/* Form styling for horizontal alignment */
+.form-inline {
+  display: flex;
+  justify-content: center; /* Centers the form in the container */
+  flex-wrap: wrap; /* Allows form items to wrap on small screens */
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Ensures all form elements are aligned in a row and centered */
+.form-inline .d-flex {
+  flex-direction: row; /* Aligns children (form elements) in a row */
+  align-items: center; /* Vertically centers the form elements */
+  flex-wrap: wrap;
+}
+
+.form-inline #submit {
+  margin-top: 32px;
+}
+
+/* Media Query for Responsive Adjustment */
+@media (max-width: 576px) {
+  .form-inline .d-flex {
+    flex-direction: column;
+  }
+  .form-inline .mr-2 {
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+}
+
+.form-inline label {
+  margin-bottom: 5px;
+}
+
+#submit {
+  margin-top: 5px;
+}
+
+.oecd-link-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.oecd-btn {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.oecd-description {
+  margin-top: 10px;
+}

@@ -9,7 +9,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, r
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from app.models import UserProfile, Icao, Airport
-from app.forms import LoginForm, FuelPredictionForm, EmissionForm
+from app.forms import LoginForm, FuelPredictionForm, EmissionForm, EmissionRankingForm
 from werkzeug.security import check_password_hash, generate_password_hash
 
 # Amadeus for live flight data
@@ -20,6 +20,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+from functools import lru_cache
 
 ###
 # Routing for your application.
@@ -68,7 +69,6 @@ def weather():
 def airport_weather(icao):
     api_key = os.environ.get('CX_WEATHER_API_KEY') 
     url = f'https://api.checkwx.com/metar/{icao}/nearest/decoded'
-    headers = {'X-API-Key': api_key}
 
     taf_data = fetch_taf_data(icao)
     sigmet_data = fetch_sigmet_data(icao)
@@ -126,8 +126,6 @@ def flights():
     print(len(cities))
 
     return render_template('flights.html', cities=cities, countries=countries,iata=iata,continent=continent)
-
-from flask import request
 
 @app.route('/flights/<src>/<dest>/<date>', methods=['GET'])
 @login_required
@@ -199,52 +197,66 @@ def flights_to_dest(src, dest, date):
 @app.route('/prediction/', methods=['GET', 'POST'])
 def fuelPrediction():
     # Load your model and scaler
-    fuel_Pred_Model = pickle.load(open(os.getcwd()+"\\fuel_Pred_Model.pkl", "rb"))
-    scaler = pickle.load(open(os.getcwd()+"\\scaler.pkl", "rb")) 
-
+    fuel_Pred_Model = pickle.load(open("fuel_Pred_Model.pkl", "rb"))
+    scaler = pickle.load(open("scaler.pkl", "rb")) 
     # Load the LabelEncoder for categorical columns
     label_encoder = LabelEncoder()
+    prediction = None  # Initialize prediction and average emissions per flight
+    formatted_prediction = None
+    average_emissions_per_flight = None
     form = FuelPredictionForm()
-
     if form.validate_on_submit():
         # Collect features from the form
-        features_input = [
-            form.airline_iata.data.upper(),
-            form.acft_icao.data.upper(),
-            form.acft_class.data.upper(),
-            form.seymour_proxy.data.upper(),
-            float(form.seats.data),
-            float(form.n_flights.data),
-            form.iata_departure.data.upper(),
-            form.iata_arrival.data.upper(),
-            float(form.distance_km.data),
-            float(form.rpk.data),
-            float(form.fuel_burn_seymour.data),
-            float(form.fuel_burn.data)
-        ]
+        airline_iata = form.airline_iata.data.upper()
+        acft_icao = form.acft_icao.data.upper()
+        seats = float(form.seats.data)
+        n_flights = float(form.n_flights.data)
+        n = float(form.n_flights.data)
+        # iata_departure = form.iata_departure.data.upper()
+        # iata_arrival = form.iata_arrival.data.upper()
+        icao_departure = form.icao_departure.data.upper()
+        icao_arrival = form.icao_arrival.data.upper() 
+        fuel_burn_seymour = float(form.fuel_burn_seymour.data)
 
-        # Convert to DataFrame for easier manipulation
-        df = pd.DataFrame([features_input], columns=['airline_iata', 'acft_icao', 'acft_class', 'seymour_proxy', 'seats', 'n_flights', 'iata_departure', 'iata_arrival', 'distance_km', 'rpk', 'fuel_burn_seymour', 'fuel_burn'])
+        # Get the distance between the departure and arrival airports
+        distance_km = get_distance(icao_departure, icao_arrival)
+        if distance_km is None:
+            flash('Failed to calculate distance. Check the ICAO codes.', 'error')
+            return render_template('fuelPrediction.html', form=form)
+        
+        print('calculated distance ', distance_km)
+        # Calculate RPK using the seats, distance, and IATA average load factor
+        rpk = seats * distance_km * 0.824
+        print('calculated rpk ', rpk)
 
-        # Handle missing values (if any)
-        # Assuming you've handled missing values in your training data, you might want to do the same here
-        # For example, fill missing values with the mean or median
-        # test_df.fillna(test_df.mean(), inplace=True)
+        # Calculate total fuel burn using the number of flights and fuel burn per flight
+        fuel_burn = fuel_burn_seymour * n_flights
+        print('calculated fuel_burn ', fuel_burn)
 
-        # Encode categorical columns
-        categorical_columns = ['airline_iata', 'acft_icao', 'acft_class', 'seymour_proxy', 'iata_departure', 'iata_arrival']
-        for column in categorical_columns:
-            df[column] = label_encoder.fit_transform(df[column])
+        # Prepare data for model
+        data = np.array([airline_iata, acft_icao])  # Categorical data
+        # data = np.array([airline_iata, acft_icao, iata_departure, iata_arrival])  # Categorical data
+        numerical_data = np.array([seats, n_flights, distance_km, rpk,fuel_burn_seymour, fuel_burn])  # Numerical data
 
-        # Convert to numpy array and scale
-        features = df.values
-        features = scaler.transform(features)
+         # Encode categorical data
+        data_encoded = np.array([label_encoder.fit_transform([feature])[0] for feature in data])
 
+        # Combine and reshape data for scaling
+        features = np.concatenate((data_encoded, numerical_data)).reshape(1, -1)
+        features_scaled = scaler.transform(features)
         # Make prediction
-        prediction = fuel_Pred_Model.predict(features)
+        prediction = fuel_Pred_Model.predict(features_scaled)
+        print('prediction', prediction)
+        print('n', n)
+        average_emissions_per_flight = prediction[0] / n if n > 0 else 0
 
-        return render_template('fuelPrediction.html', form=form, prediction=prediction[0])
-    return render_template('fuelPrediction.html', form=form, prediction=0)
+        formatted_prediction = "{:,.2f}".format(prediction[0])  # Format the prediction to two decimal places and comma-separated
+        average_emissions_per_flight = "{:,.2f}".format(average_emissions_per_flight)
+    
+    return render_template('fuelPrediction.html', form=form, prediction=formatted_prediction, average_emissions_per_flight=average_emissions_per_flight)
+
+    #     return render_template('results.html', prediction=formatted_prediction, distance=distance_km, rpk=rpk, fuel_burn=fuel_burn)
+    # return render_template('fuelPrediction.html', form=form)
 
 @app.route('/emissions-report/', methods=['GET', 'POST'])
 def generateReport():
@@ -255,37 +267,132 @@ def generateReport():
             country=form.country.data,
             timeframe=form.timeframe.data,
             start_year=form.start_year.data,
-            month=form.month.data if form.month.data else None,
-            quarter=form.quarter.data if form.quarter.data else None,
+            month=form.start_month.data if form.start_month.data else None,
+            quarter=form.start_quarter.data if form.start_quarter.data else None,
             end_year=form.end_year.data,
             end_month=form.end_month.data if form.end_month.data else None,
             end_quarter=form.end_quarter.data if form.end_quarter.data else None
         )
 
-        if raw_data == "NoRecordsFound":
-            flash('No data available for the selected parameters.', 'warning')
+        if raw_data in ["NoRecordsFound", "ErrorParsingXML", "Failed to retrieve data"]:
+            flash('No data available for the selected parameters.' if raw_data == "NoRecordsFound" else 'There was an error processing your request. Please try again later.', 'warning')
             return redirect(url_for('generateReport'))
-        elif raw_data == "ErrorParsingXML" or raw_data == "Failed to retrieve data":
-            flash('There was an error processing your request. Please try again later.', 'error')
-            return redirect(url_for('generateReport'))
-
+        print('raw_data', raw_data)
+        sorted_data = sorted(raw_data, key=lambda x: x['time_period'])
         data_summary = {}
         total_emissions = 0
-        for item in raw_data:
-            time_key = item['time_period']
-            emissions = float(item['emissions'])
-            total_emissions += emissions
-            data_summary.setdefault(time_key, 0)
-            data_summary[time_key] += emissions
+        all_emissions = []
 
-        return render_template('report.html', data_summary=data_summary, total_emissions=total_emissions, country=country_name, timeframe=form.timeframe.data, start_year=form.start_year.data, end_year=form.end_year.data)
+        for item in sorted_data:
+            time_key = item['time_period']
+            emissions = float(item['emissions'])  # Ensure conversion to float
+            total_emissions += emissions
+
+            # Aggregate emissions by time period
+            if time_key in data_summary:
+                data_summary[time_key] += emissions
+            else:
+                data_summary[time_key] = emissions
+
+        print('data summary', data_summary)
+
+        highest_emissions = {'time_period': max(data_summary, key=data_summary.get), 'emissions': data_summary[max(data_summary, key=data_summary.get)], 'unit': 'T'} if data_summary else None
+        lowest_emissions = {'time_period': min(data_summary, key=data_summary.get), 'emissions': data_summary[min(data_summary, key=data_summary.get)], 'unit': 'T'} if data_summary else None
+
+        print('highest_emissions', highest_emissions)
+        print('lowest_emissions', lowest_emissions)
+        average_emissions = total_emissions / len(data_summary) if data_summary else 0
+
+        # Format the numbers for display in the template
+        formatted_total_emissions = "{:,.2f}".format(total_emissions)
+        highest_emissions['emissions'] = "{:,.2f}".format(highest_emissions['emissions'])
+        lowest_emissions['emissions'] = "{:,.2f}".format(lowest_emissions['emissions'])
+        formatted_average_emissions = "{:,.2f}".format(average_emissions)
+
+        return render_template('report.html', data_summary=data_summary, 
+                               total_emissions=formatted_total_emissions,
+                               highest_emissions=highest_emissions, 
+                               lowest_emissions=lowest_emissions,
+                               average_emissions=formatted_average_emissions, 
+                               country=country_name, timeframe=form.timeframe.data,
+                               start_year=form.start_year.data, end_year=form.end_year.data)
     else:
-            # If there is a validation error, the form will be rendered with error messages
-            for fieldName, errorMessages in form.errors.items():
-                for err in errorMessages:
-                    flash(f'Error in {fieldName}: {err}', 'error')
-            redirect(url_for('generateReport'))
+        for fieldName, errorMessages in form.errors.items():
+            for err in errorMessages:
+                flash(f'Error in {fieldName}: {err}', 'danger')
     return render_template('reportform.html', form=form)
+
+@app.route('/emissions-ranking', methods=['GET', 'POST'])
+def country_ranking():
+    current_year = datetime.now().year
+    form = EmissionRankingForm()
+    if request.method == 'GET':
+        form.start_year.data = current_year - 1
+        form.start_month.data = '1'
+        form.end_month.data = '12'
+    
+    if form.validate_on_submit() or request.method == 'GET':
+        start_year = int(form.start_year.data)
+        start_month = int(form.start_month.data)
+        end_year = start_year  # Assume same year for simplicity
+        end_month = int(form.end_month.data)
+
+        print("timeframe ", start_month, start_year," to ",  end_month, end_year)
+
+        base_url = "https://sdmx.oecd.org/public/rest/data"
+        dataflow = "OECD.SDD.NAD.SEEA,DSD_AIR_TRANSPORT@DF_AIR_TRANSPORT,1.0"
+        time_suffix = f".M....._T.."  # Updated to include '_T' for all flights
+        start_period = f"{start_year}-{start_month:02}"
+        end_period = f"{end_year}-{end_month:02}"
+        url = f"{base_url}/{dataflow}/{time_suffix}?startPeriod={start_period}&endPeriod={end_period}&dimensionAtObservation=AllDimensions"
+        print('start_period', start_period)
+        print('end_period ', end_period)
+        print(url)
+
+        root, error_message = fetch_country_data(url)
+        if error_message:
+            flash(error_message, 'danger')  # Flash an error messag
+            return redirect(url_for('country_ranking')) 
+
+        country_data = {}
+        total_emissions = 0
+
+        if root:
+            for obs in root.findall('.//generic:Obs', namespaces={'generic': 'http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic'}):
+                country_code = obs.find('.//generic:Value[@id="REF_AREA"]', namespaces={'generic': 'http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic'}).attrib['value']
+                emissions = float(obs.find('.//generic:ObsValue', namespaces={'generic': 'http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic'}).attrib['value'])
+                country_data[country_code] = country_data.get(country_code, 0) + emissions
+                total_emissions += emissions
+
+            # print('country_data', country_data)
+            # print('total_emissions', total_emissions)
+            emissions_values = list(country_data.values())
+            low_threshold, high_threshold = np.percentile(emissions_values, [33, 66])
+            
+            formatted_countries = []
+            for code, emissions in country_data.items():
+                percentage = (emissions / total_emissions) * 100
+                if emissions < low_threshold:
+                    color_class = 'low-emissions'
+                elif emissions < high_threshold:
+                    color_class = 'medium-emissions'
+                else:
+                    color_class = 'high-emissions'
+                
+                formatted_countries.append((get_country_name_by_code(code), format(emissions, ',.2f'), format(percentage, '.2f'), color_class))
+
+            sorted_countries = sorted(formatted_countries, key=lambda item: float(item[1].replace(',', '')), reverse=(form.order.data == 'descending'))
+
+            average_emissions = total_emissions / len(country_data) if country_data else 0
+
+            return render_template('ranking.html', form=form, countries=sorted_countries,
+                                   total_emissions=format(total_emissions, ',.2f'), 
+                                   average_emissions=format(average_emissions, ',.2f'),
+                                   start_year=start_year, start_month=start_month, 
+                                   end_year=end_year, end_month=end_month)
+
+    return render_template('ranking.html', form=form)
+
 
 @login_required
 @app.route('/chat/')
@@ -297,7 +404,8 @@ def chat():
     try:
         data = request.json
         icao_code = data.get('icao_code', '').strip()
-        flight_distance_str = data.get('flight_distance', '0').strip()
+        # flight_distance_str = data.get('flight_distance', '0').strip()
+        flight_distance_str = str(data.get('flight_distance'))
 
         if not icao_code:
             return jsonify({'error': 'Missing ICAO code'}), 400
@@ -319,19 +427,20 @@ def chat():
         # Compose response message
         weather_info = []
         if temperature is not None:
-            weather_info.append(f"Temperature: {temperature} °C")
+            weather_info.append(f"Temperature: {temperature} °C <br> ")
         if wind_speed is not None:
-            weather_info.append(f"Wind Speed: {wind_speed} kt")
-        weather_info.append(f"Rainfall: {'Yes' if is_rainfall else 'No'}")
-        weather_info.append(f"Thunderstorms: {'Yes' if is_thunderstorms else 'No'}")
+            weather_info.append(f"Wind Speed: {wind_speed} kt <br> ")
+        weather_info.append(f"Rainfall: {'Yes' if is_rainfall else 'None'} <br> ")
+        weather_info.append(f"Thunderstorms: {'Yes' if is_thunderstorms else 'None'} <br> ")
 
         message = f"Current Weather Conditions:\n" + '\n'.join(weather_info) + \
-                  f"\n\nEmissions: {emissions:.2f} kg CO2. {recommendations}"
+                  f"\n\nEmissions: {emissions-(0.05*emissions):.2f} kg - {emissions+(0.05*emissions):.2f} kg CO2 ({emissions:.2f} ± 5%) <br> {recommendations}"
 
         return jsonify({'message': message})
     except Exception as e:
         return jsonify({'error': f"Error processing request: {str(e)}"}), 500
 
+# Works and retruns  a dictionary
 # Works and retruns  a dictionary
 def get_emissions(country, timeframe, start_year, month, quarter, end_year, end_month, end_quarter):
     base_url = "https://sdmx.oecd.org/public/rest/data"
@@ -341,15 +450,15 @@ def get_emissions(country, timeframe, start_year, month, quarter, end_year, end_
     if timeframe == 'annual':
         start_period = f"{start_year}"
         end_period = f"{end_year}"
-        time_suffix = ".A......."
+        time_suffix = f".A....._T.."  # Updated to include '_T' for all flights
     elif timeframe == 'monthly':
         start_period = f"{start_year}-{month.zfill(2)}"
         end_period = f"{end_year}-{end_month.zfill(2)}"
-        time_suffix = ".M......."
+        time_suffix = f".M....._T.."  # Updated to include '_T' for all flights
     elif timeframe == 'quarterly':
         start_period = f"{start_year}-Q{quarter}"
         end_period = f"{end_year}-Q{end_quarter}"
-        time_suffix = ".Q......."
+        time_suffix = f".Q....._T.."  # Updated to include '_T' for all flights
     
     url = f"{base_url}/{dataflow}/{country}{time_suffix}?startPeriod={start_period}&endPeriod={end_period}&dimensionAtObservation=AllDimensions"
     print("Requesting URL:", url)  # For debugging purposes
@@ -472,6 +581,14 @@ def get_db_connection():
     cur = conn.cursor()    
     return conn, cur
 
+# 
+def fetch_country_data(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        return ET.fromstring(response.content), None
+    else:
+        error_message = f"Failed to fetch data: {response.status_code} - {response.reason}"
+        return None, error_message
 # Helper functions for SIGMET and TAF weather advisories
 def fetch_data(url, headers):
     response = requests.get(url, headers=headers)
@@ -504,23 +621,29 @@ def analyze_taf_fuel_impact(taf_data):
                 period = f"From {forecast['timestamp']['from']} to {forecast['timestamp']['to']}"
                 conditions_described = ', '.join(c['text'] for c in forecast.get('conditions', []))
                 wind_speed = forecast.get('wind', {}).get('speed_kts', 0)
-                impact_desc = f"{conditions_described}. High winds might increase fuel if wind speed > 20 kts ({wind_speed} kts)."
+                impact_desc = ''
+                if wind_speed > 20:
+                    impact_desc += f"High winds might increase fuel consumption, current wind speed is {wind_speed}Kts. "
+                else:
+                    impact_desc += f"Low winds with a speed of {wind_speed} Kts. "
+                if conditions_described:
+                    impact_desc += f"{conditions_described}. "
 
                 # Include visibility and significant weather conditions like snow, ice, or fog
                 if 'visibility' in forecast and forecast['visibility']['miles_float'] < 1:
-                    impact_desc += " Low visibility could lead to delays and increased fuel usage."
+                    impact_desc += " \nLow visibility could lead to delays and increased fuel usage."
                 if any('snow' in c['text'].lower() or 'ice' in c['text'].lower() or 'fog' in c['text'].lower() for c in forecast.get('conditions', [])):
-                    impact_desc += " Conditions like snow, ice, or fog may require de-icing and can cause delays, increasing fuel usage."
+                    impact_desc += " \nConditions like snow, ice, or fog may require de-icing and can cause delays, increasing fuel usage."
 
                 # Check for rain and its operational implications
                 if any('rain' in c['text'].lower() for c in forecast.get('conditions', [])):
-                    impact_desc += " Rain may lead to increased braking distances and reduced runway friction, potentially affecting fuel usage due to longer taxi and rollout times."
+                    impact_desc += " \nRain may lead to increased braking distances and reduced runway friction, potentially affecting fuel usage due to longer taxi and rollout times."
 
                 # Check for thunderstorms and turbulence for additional flight considerations
                 if any('thunderstorm' in c['text'].lower() for c in forecast.get('conditions', [])):
-                    impact_desc += " Thunderstorms may necessitate significant rerouting."
+                    impact_desc += " \nThunderstorms may necessitate significant rerouting."
                 if any('turbulence' in c['text'].lower() for c in forecast.get('conditions', [])):
-                    impact_desc += " Turbulence could lead to operational adjustments and potential fuel inefficiencies."
+                    impact_desc += " \nTurbulence could lead to operational adjustments and potential fuel inefficiencies."
 
                 # Append the formatted string to impacts list
                 impacts.append({
@@ -528,6 +651,14 @@ def analyze_taf_fuel_impact(taf_data):
                     'period': period,
                     'description': impact_desc
                 })
+
+    if not impacts:
+                    impacts.append({
+                    'icao': 'N/A',
+                    'period': 'N/A',
+                    'description': 'No significant TAF advisories affecting fuel emissions.'
+                })
+
     return impacts
 
 def analyze_sigmet_fuel_impact(sigmet_data):
@@ -555,23 +686,17 @@ def analyze_sigmet_fuel_impact(sigmet_data):
         })
     return impacts
 
+@lru_cache(maxsize=1)
 def fetch_country_codes():
     url = 'https://restcountries.com/v3.1/all'
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-        countries = {country['cca3']: country['name']['common'] for country in data}
-        # Sorting countries by their common name
-        sorted_countries = dict(sorted(countries.items(), key=lambda item: item[1]))
-        return sorted_countries
-    else:
-        print("Failed to fetch data")
-        return {}
+        return {country['cca3']: country['name']['common'] for country in data}
+    return {}
     
 def get_country_name_by_code(country_code):
-    # Fetch the dictionary of country codes
     countries = fetch_country_codes()
-    # Return the country name matching the country code
     return countries.get(country_code, "Unknown country code")
 
 def extract_wind_speed(weather_data):
@@ -617,3 +742,59 @@ def get_weather(api_key, icao_code):
     headers = {'X-API-Key': api_key}
     response = requests.get(url, headers=headers)
     return response.json()
+
+# Function to calculate distance between 2 airports via ICAO codes w/ CheckWX API
+def get_distance(src, dest):
+    api_key = os.environ.get('CX_WEATHER_API_KEY')
+    urlsrc = f'https://api.checkwx.com/metar/{src}/decoded'
+    urldest = f'https://api.checkwx.com/metar/{dest}/decoded'
+
+    responsesrc = requests.get(urlsrc, headers={'X-API-Key': api_key})
+    responsedest = requests.get(urldest, headers={'X-API-Key': api_key})
+
+    try:
+        srcdata = responsesrc.json()["data"][0]['station']['geometry']['coordinates']
+        srclat = srcdata[1]
+        srclong = srcdata[0]
+
+        destdata = responsedest.json()["data"][0]['station']['geometry']['coordinates']
+        destlat= destdata[1]
+        destlong = destdata[0]
+
+        def calc_distance(lat1, lon1, lat2, lon2):
+            import math
+            # Convert degrees to radians
+            lat1_rad = math.radians(lat1)
+            lon1_rad = math.radians(lon1)
+            lat2_rad = math.radians(lat2)
+            lon2_rad = math.radians(lon2)
+
+            # Calculate the difference in longitude
+            delta_lon = lon2_rad - lon1_rad
+
+            # Apply the formula
+            distance = math.acos(math.sin(lat1_rad) * math.sin(lat2_rad) +
+                                math.cos(lat1_rad) * math.cos(lat2_rad) * math.cos(delta_lon)) * 6371
+
+            return distance
+
+        return calc_distance(srclat, srclong, destlat, destlong)
+
+    except (IndexError, KeyError):
+        return None  # Return None or a suitable default if an error occurs
+
+from flask import jsonify, request
+
+@app.route('/ajax/getDistance', methods=['POST'])
+def ajax_get_distance():
+    try:
+        # Parse the incoming JSON data
+        data = request.get_json()
+        
+        # Extract src and dest from the parsed data
+        src = data['src']
+        dest = data['dest']
+        d= get_distance(src,dest)
+        return jsonify({"distance": d}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

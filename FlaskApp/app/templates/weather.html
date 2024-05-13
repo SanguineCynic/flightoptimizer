@@ -40,14 +40,12 @@
 </div>
 
 <div class="container mt-5">
-    <h1 class="text-center mb-4">Weather Impacts for {{ icao }}</h1>
+    <h1 class="text-center mb-4">Forecasted Weather Impacts for {{ icao }}</h1>
 
     <!-- Table for TAF Fuel Impacts -->
-    <div class="card mb-4">
-        <div class="card-header">
-            TAF Fuel Impacts
-        </div>
-        <table class="table table-striped">
+    <div class="container mb-4">
+           <h3 style="display: inline;"> TAF Fuel Impacts</h3> <i id="TAFInfo" class="bi bi-info-circle-fill"></i>
+        <table class="table table-primary">
             <thead>
                 <tr>
                     <th scope="col">ICAO</th>
@@ -68,11 +66,9 @@
     </div>
 
     <!-- Table for SIGMET Fuel Impacts -->
-    <div class="card">
-        <div class="card-header">
-            SIGMET Fuel Impacts
-        </div>
-        <table class="table table-striped">
+    <div class="container">
+            <h3 style="display: inline;">SIGMET Fuel Impacts</h3> <i id="SIGInfo" class="bi bi-info-circle-fill"></i>
+        <table class="table table-primary">
             <thead>
                 <tr>
                     <th scope="col">ICAO</th>

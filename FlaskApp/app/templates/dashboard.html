@@ -1,6 +1,15 @@
 {% extends "base.html" %}
 
 {% block main %}
+<div class="text-dark bg-light text-center py-3 br-2 rounded d-flex flex-row justify-content-center align-items-center">
+    <img class="img-fluid col-md-1 float-start" src="{{ url_for('static', filename='images/logo.png') }}" alt="">
+    <div class="px-5">
+        <h1 class="fw-bold px-2">Aviation Fuel Emissions & Weather Insights</h1>
+        <p class="blockquote"><em>"Helping toward the 2050 net-zero emissions commitment."</em></p>
+    </div>
+</div>
+
+
 <div class="container mt-5">
     <div class="row">
         <!-- Card 1 -->

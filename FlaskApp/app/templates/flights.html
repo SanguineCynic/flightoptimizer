@@ -21,7 +21,7 @@
    </div>
    
 <div class="scrollable-table">
-    <table id="icao_table1">
+    <table id="icao_table1" class="table table-primary">
         <thead>
             <tr>
                 <th>City</th>
@@ -53,7 +53,7 @@
    </div>
 <!-- Duplicated Table -->
 <div class="scrollable-table">
-    <table id="icao_table_2">
+    <table id="icao_table_2" class="table table-primary">
         <thead>
             <tr>
                 <th>City</th>
@@ -74,8 +74,8 @@
         </tbody>
     </table>
 </div>
-
-<button id="viewFlightsButton" onclick="viewFlights()">View Flights</button>
+<br>
+<button id="viewFlightsButton" onclick="viewFlights()" class="btn btn-primary">View Flights</button>
 
 
 {% endblock %}
@@ -164,6 +164,12 @@ function viewFlights(){
     // Get the selected date
     var flightDate = document.getElementById('flightDate').value;
     
+    // Check if all necessary inputs are filled
+    if (!flightDate ||!clickedIataCode1 ||!clickedIataCode2) {
+        alert('Please select a date, source, and destination before viewing flights.');
+        return; // Prevent redirection if any input is missing
+    }
+    
     // Construct the URL string manually
     var src = clickedIataCode1;
     var dest = clickedIataCode2;
@@ -172,6 +178,7 @@ function viewFlights(){
     // Redirect to the constructed URL
     window.location.href = url;
 }
+
 
 
 
