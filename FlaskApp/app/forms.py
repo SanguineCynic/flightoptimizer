@@ -1,25 +1,31 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, FloatField, SubmitField, SelectField, PasswordField, IntegerField
 from wtforms.validators import InputRequired, Length, NumberRange, DataRequired, ValidationError
-import requests
+import requests, psycopg2,os
 
 def validate_four_digit_year(form, field):
     year = field.data
     if year and (year < 1000 or year > 9999):
         raise ValidationError("Year must be a four-digit number.")
     
+def get_db_connection():
+    conn = psycopg2.connect(
+        host="localhost",
+        database="flightoptimizer",
+        user=os.environ.get('DATABASE_USERNAME', 'postgres'),
+        password= os.environ.get('DATABASE_PASSWORD')
+    )    
+    cur = conn.cursor()    
+    return conn, cur
+
 def fetch_country_codes():
-    url = 'https://restcountries.com/v3.1/all'
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        countries = {country['cca3']: country['name']['common'] for country in data}
-        # Sorting countries by their common name
-        sorted_countries = dict(sorted(countries.items(), key=lambda item: item[1]))
-        return sorted_countries
-    else:
-        print("Failed to fetch data")
-        return {}
+    conn, cur = get_db_connection()
+    cur.execute("SELECT * FROM countries;")
+    response = cur.fetchall()
+    countries = {r[0]:r[1] for r in response}
+    # Sorting countries by their common name
+    sorted_countries = dict(sorted(countries.items(), key=lambda item: item[1]))
+    return sorted_countries
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[InputRequired()])

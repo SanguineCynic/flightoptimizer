@@ -277,7 +277,7 @@ def generateReport():
         if raw_data in ["NoRecordsFound", "ErrorParsingXML", "Failed to retrieve data"]:
             flash('No data available for the selected parameters.' if raw_data == "NoRecordsFound" else 'There was an error processing your request. Please try again later.', 'warning')
             return redirect(url_for('generateReport'))
-        print('raw_data', raw_data)
+        # print('raw_data', raw_data)
         sorted_data = sorted(raw_data, key=lambda x: x['time_period'])
         data_summary = {}
         total_emissions = 0
@@ -688,12 +688,10 @@ def analyze_sigmet_fuel_impact(sigmet_data):
 
 @lru_cache(maxsize=1)
 def fetch_country_codes():
-    url = 'https://restcountries.com/v3.1/all'
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        return {country['cca3']: country['name']['common'] for country in data}
-    return {}
+    conn, cur = get_db_connection()
+    cur.execute("SELECT * FROM countries;")
+    response = cur.fetchall()
+    return {r[0]:r[1] for r in response}
     
 def get_country_name_by_code(country_code):
     countries = fetch_country_codes()
