@@ -238,8 +238,8 @@ def fuelPrediction():
                 flash(f'Estimated fuel burn for {distance} km: {estimated_fuel:.2f} kg', 'success')
             else:
                 flash('Aircraft ICAO code not found in the database.', 'danger')
-
-            return redirect(url_for('fuelPrediction'))
+                return redirect(url_for('fuelPrediction'))
+        
         predform = FuelPredictionForm()
         if predform.validate_on_submit():
             # Collect features from the form
@@ -258,8 +258,8 @@ def fuelPrediction():
 
             # Get the distance between the departure and arrival airports
             if len(icao_arrival) != len(icao_departure):
-                flash('Please use either a pair of IATA or a pair of ICAO codes')
-                return redirect('fuelPrediction')
+                flash('Please use either a pair of IATA or a pair of ICAO codes','warning')
+                return redirect(url_for('fuelPrediction'))
             if len(icao_arrival) == 4:
                 # ICAO code
                 distance_km = get_distance(icao_departure, icao_arrival)
