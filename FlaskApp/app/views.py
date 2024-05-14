@@ -469,6 +469,8 @@ def chat():
 
         if not icao_code:
             return jsonify({'error': 'Missing ICAO code'}), 400
+        if flight_distance_str == 'null' or flight_distance_str == '0':
+            return jsonify({'message': 'Invalid ICAO code pair'}), 400
         try:
             cur.execute("SELECT icao from icao_codes")
             icao_codes = cur.fetchall()
@@ -833,6 +835,10 @@ def get_weather(api_key, icao_code):
 
 # Function to calculate distance between 2 airports via ICAO codes w/ CheckWX API
 def get_distance(src, dest):
+
+    if src == dest:
+        return 0
+    
     api_key = os.environ.get('CX_WEATHER_API_KEY')
     urlsrc = f'https://api.checkwx.com/metar/{src}/decoded'
     urldest = f'https://api.checkwx.com/metar/{dest}/decoded'
