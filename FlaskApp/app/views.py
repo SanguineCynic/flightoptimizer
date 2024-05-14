@@ -9,7 +9,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, r
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from app.models import UserProfile, Icao, Airport
-from app.forms import LoginForm, FuelPredictionForm, EmissionForm, EmissionRankingForm
+from app.forms import LoginForm, FuelPredictionForm, EmissionForm, EmissionRankingForm, FuelBurnForm
 from werkzeug.security import check_password_hash, generate_password_hash
 
 # Amadeus for live flight data
@@ -29,29 +29,37 @@ from functools import lru_cache
 @app.route('/')
 @login_required
 def home():
-    """Render website's home page."""
-    conn, cur = get_db_connection()
-    
-    # Queries the Icao model from models.py to check for table population. If empty, populate.
-    if Icao.query.first() is None:
-        with open(os.getcwd()+"\\app\\static\\sql\\icao_query.sql", "r", encoding="utf-8") as file:
-            cur.execute(file.read())
-            conn.commit()
-    
-    # Query to get all ICAO codes
-    cur.execute("SELECT * FROM icao_codes")
-    rows = cur.fetchall()
+    if is_admin(current_user.username) or is_atc(current_user.username):
+        """This is actually the ICAO selection page for the weather report"""
+        conn, cur = get_db_connection()
+        
+        # Queries the Icao model from models.py to check for table population. If empty, populate.
+        if Icao.query.first() is None:
+            with open(os.getcwd()+"\\app\\static\\sql\\icao_query.sql", "r", encoding="utf-8") as file:
+                cur.execute(file.read())
+                conn.commit()
+        
+        # Query to get all ICAO codes
+        cur.execute("SELECT * FROM icao_codes")
+        rows = cur.fetchall()
 
-    region_names = [row[0] for row in rows]
-    icao_codes = [row[1] for row in rows]
-    airports = [row[2] for row in rows]
+        region_names = [row[0] for row in rows]
+        icao_codes = [row[1] for row in rows]
+        airports = [row[2] for row in rows]
 
-    return render_template('home.html', icao_codes=icao_codes, region_names=region_names, airports=airports)
+        return render_template('home.html', icao_codes=icao_codes, region_names=region_names, airports=airports)
+    else:
+        flash('Must be an ATC to access this page', 'warning')
+        return redirect('dashboard')
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    # For RBAC dynamic dashboard
+    username = current_user.username
+    user_role = UserProfile.query.filter_by(username=username).first().role
+
+    return render_template('dashboard.html', user_role=user_role)
 
 @app.route('/about/')
 def about():
@@ -67,44 +75,51 @@ def weather():
 @app.route('/weather/<icao>', methods=['GET'])
 @login_required
 def airport_weather(icao):
-    api_key = os.environ.get('CX_WEATHER_API_KEY') 
-    url = f'https://api.checkwx.com/metar/{icao}/nearest/decoded'
+    if is_admin(current_user.username) or is_atc(current_user.username):
+        api_key = os.environ.get('CX_WEATHER_API_KEY') 
+        url = f'https://api.checkwx.com/metar/{icao}/nearest/decoded'
 
-    taf_data = fetch_taf_data(icao)
-    sigmet_data = fetch_sigmet_data(icao)
-    taf_impacts = analyze_taf_fuel_impact(taf_data)
-    sigmet_impacts = analyze_sigmet_fuel_impact(sigmet_data)
+        taf_data = fetch_taf_data(icao)
+        sigmet_data = fetch_sigmet_data(icao)
+        taf_impacts = analyze_taf_fuel_impact(taf_data)
+        sigmet_impacts = analyze_sigmet_fuel_impact(sigmet_data)
 
-    response = requests.request("GET", url, headers={'X-API-Key': api_key})
-    try:
-        data = response.json()["data"][0]
-    except IndexError:
-        flash('Incorrect ICAO code', 'warning')
-        return redirect(url_for('home'))
+        response = requests.request("GET", url, headers={'X-API-Key': api_key})
+        try:
+            data = response.json()["data"][0]
+        except IndexError:
+            flash('Incorrect ICAO code', 'warning')
+            return redirect(url_for('home'))
 
-    temperature_data = data["temperature"]
-    degsC = temperature_data["celsius"]
-    degsF = temperature_data["fahrenheit"]
+        temperature_data = data["temperature"]
+        degsC = temperature_data["celsius"]
+        degsF = temperature_data["fahrenheit"]
 
-    try:
-        wind_data=data["wind"]
-        speedKPH = wind_data["speed_kph"]
-        speedMPH = wind_data["speed_mph"]
-    except KeyError:
-        speedKPH = "Not Reported "
-        speedMPH = "Not Reported "
+        try:
+            wind_data=data["wind"]
+            speedKPH = wind_data["speed_kph"]
+            speedMPH = wind_data["speed_mph"]
+        except KeyError:
+            speedKPH = "Not Reported "
+            speedMPH = "Not Reported "
 
-    conditions = data["clouds"][0]
-    forecast_desc = conditions["text"]
+        conditions = data["clouds"][0]
+        forecast_desc = conditions["text"]
+        
+        humidity = data["humidity"]["percent"]
+
+        return render_template('weather.html', degsC=degsC, degsF=degsF, speedKPH=speedKPH, speedMPH=speedMPH, icao=icao, humidity=humidity,
+                            forecast_desc=forecast_desc, taf_impacts=taf_impacts, sigmet_impacts=sigmet_impacts)
+    else:
+        flash('Must be ATC to access this page','warning')
+        return redirect('dashboard')
     
-    humidity = data["humidity"]["percent"]
-
-    return render_template('weather.html', degsC=degsC, degsF=degsF, speedKPH=speedKPH, speedMPH=speedMPH, icao=icao, humidity=humidity,
-                           forecast_desc=forecast_desc, taf_impacts=taf_impacts, sigmet_impacts=sigmet_impacts)
-
 @app.route('/flights/')
 @login_required
 def flights():
+    if not(is_admin(current_user.username)):
+        flash('Must be system administrator to access this page','warning')
+        return redirect('dashboard')
     conn, cur = get_db_connection()
 
     # Queries the Airport model from models.py to check for table population. If empty, populate.
@@ -130,6 +145,9 @@ def flights():
 @app.route('/flights/<src>/<dest>/<date>', methods=['GET'])
 @login_required
 def flights_to_dest(src, dest, date):
+    if not(is_admin(current_user.username)):
+        flash('Must be system administrator to access this page','warning')
+        return redirect('dashboard')
     rockMe = Client(
         client_id=os.environ.get("AMADEUS_CLIENT_ID"),
         client_secret=os.environ.get("AMADEUS_API_KEY")
@@ -189,77 +207,115 @@ def flights_to_dest(src, dest, date):
         
         # Render the template with the data
         return render_template('specify_flights.html', segment_counts=segment_counts, departure_iata_codes=departure_iata_codes, arrival_iata_codes=arrival_iata_codes, carrier_aircraft_pairs=carrier_aircraft_pairs, len=len(arrival_iata_codes))
-        return jsonify(flights_info)
     except ResponseError as error:
         return render_template('error.html', error=str(error)), 500
     
 
 @app.route('/prediction/', methods=['GET', 'POST'])
 def fuelPrediction():
-    # Load your model and scaler
-    fuel_Pred_Model = pickle.load(open("fuel_Pred_Model.pkl", "rb"))
-    scaler = pickle.load(open("scaler.pkl", "rb")) 
-    # Load the LabelEncoder for categorical columns
-    label_encoder = LabelEncoder()
-    prediction = None  # Initialize prediction and average emissions per flight
-    formatted_prediction = None
-    average_emissions_per_flight = None
-    form = FuelPredictionForm()
-    if form.validate_on_submit():
-        # Collect features from the form
-        airline_iata = form.airline_iata.data.upper()
-        acft_icao = form.acft_icao.data.upper()
-        seats = float(form.seats.data)
-        n_flights = float(form.n_flights.data)
-        n = float(form.n_flights.data)
-        # iata_departure = form.iata_departure.data.upper()
-        # iata_arrival = form.iata_arrival.data.upper()
-        icao_departure = form.icao_departure.data.upper()
-        icao_arrival = form.icao_arrival.data.upper() 
-        fuel_burn_seymour = float(form.fuel_burn_seymour.data)
+    if is_admin(current_user.username):
+        # Load your model and scaler
+        fuel_Pred_Model = pickle.load(open("fuel_Pred_Model.pkl", "rb"))
+        scaler = pickle.load(open("scaler.pkl", "rb")) 
+        # Load the LabelEncoder for categorical columns
+        label_encoder = LabelEncoder()
+        prediction = None  # Initialize prediction and average emissions per flight
+        formatted_prediction = None
+        average_emissions_per_flight = None
+        calcform = FuelBurnForm()
+        conn, cur = get_db_connection()
+        if calcform.validate_on_submit():
+            icao_code = calcform.icao_code.data.upper()
+            distance = calcform.distance.data
 
-        # Get the distance between the departure and arrival airports
-        distance_km = get_distance(icao_departure, icao_arrival)
-        if distance_km is None:
-            flash('Failed to calculate distance. Check the ICAO codes.', 'error')
-            return render_template('fuelPrediction.html', form=form)
+            cur.execute(f"SELECT avg_fuel_burn_kg_km FROM aircraft_data WHERE icao_code = \'{icao_code}\'")
+
+            aircraft = cur.fetchone()
+            print(aircraft)
+            if aircraft:
+                avg_fuel_burn_kg_km = aircraft[0]
+                estimated_fuel = float(distance * avg_fuel_burn_kg_km)*1.07
+                flash(f'Estimated fuel burn for {distance} km: {estimated_fuel:.2f} kg', 'success')
+            else:
+                flash('Aircraft ICAO code not found in the database.', 'danger')
+
+            return redirect(url_for('fuelPrediction'))
+        predform = FuelPredictionForm()
+        if predform.validate_on_submit():
+            # Collect features from the form
+            airline_iata = predform.airline_iata.data.upper()
+            acft_icao = predform.acft_icao.data.upper()
+            seats = float(predform.seats.data)
+            n_flights = float(predform.n_flights.data)
+            n = float(predform.n_flights.data)
+            # iata_departure = form.iata_departure.data.upper()
+            # iata_arrival = form.iata_arrival.data.upper()
+
+            icao_departure = predform.icao_departure.data.upper()
+            icao_arrival = predform.icao_arrival.data.upper() 
+
+            fuel_burn_seymour = float(predform.fuel_burn_seymour.data)
+
+            # Get the distance between the departure and arrival airports
+            if len(icao_arrival) != len(icao_departure):
+                flash('Please use either a pair of IATA or a pair of ICAO codes')
+                return redirect('fuelPrediction')
+            if len(icao_arrival) == 4:
+                # ICAO code
+                distance_km = get_distance(icao_departure, icao_arrival)
+            else:
+                # IATA code
+                cur.execute(f"SELECT icao from iata_to_icao where iata=\'{icao_arrival}\'")
+                icao_arrival = cur.fetchone()[0]
+                cur.execute(f"SELECT icao from iata_to_icao where iata=\'{icao_departure}\'")
+                icao_departure = cur.fetchone()[0]
+                distance_km = get_distance(icao_departure, icao_arrival)
+
+            if distance_km is None:
+                flash('Failed to calculate distance. Check the IATA/ICAO codes.', 'error')
+                return render_template('fuelPrediction.html', predform=predform, calcform=calcform)
+            
+            print('calculated distance ', distance_km)
+            # Calculate RPK using the seats, distance, and IATA average load factor
+            rpk = seats * distance_km * 0.824
+            print('calculated rpk ', rpk)
+
+            # Calculate total fuel burn using the number of flights and fuel burn per flight
+            fuel_burn = fuel_burn_seymour * n_flights
+            print('calculated fuel_burn ', fuel_burn)
+
+            # Prepare data for model
+            data = np.array([airline_iata, acft_icao])  # Categorical data
+            # data = np.array([airline_iata, acft_icao, iata_departure, iata_arrival])  # Categorical data
+            numerical_data = np.array([seats, n_flights, distance_km, rpk,fuel_burn_seymour, fuel_burn])  # Numerical data
+
+            # Encode categorical data
+            data_encoded = np.array([label_encoder.fit_transform([feature])[0] for feature in data])
+
+            # Combine and reshape data for scaling
+            features = np.concatenate((data_encoded, numerical_data)).reshape(1, -1)
+            features_scaled = scaler.transform(features)
+            # Make prediction
+            prediction = fuel_Pred_Model.predict(features_scaled)
+            print('prediction', prediction)
+            print('n', n)
+            average_emissions_per_flight = prediction[0] / n if n > 0 else 0
+
+            formatted_prediction = "{:,.2f}".format(prediction[0])  # Format the prediction to two decimal places and comma-separated
+            average_emissions_per_flight = "{:,.2f}".format(average_emissions_per_flight)
         
-        print('calculated distance ', distance_km)
-        # Calculate RPK using the seats, distance, and IATA average load factor
-        rpk = seats * distance_km * 0.824
-        print('calculated rpk ', rpk)
-
-        # Calculate total fuel burn using the number of flights and fuel burn per flight
-        fuel_burn = fuel_burn_seymour * n_flights
-        print('calculated fuel_burn ', fuel_burn)
-
-        # Prepare data for model
-        data = np.array([airline_iata, acft_icao])  # Categorical data
-        # data = np.array([airline_iata, acft_icao, iata_departure, iata_arrival])  # Categorical data
-        numerical_data = np.array([seats, n_flights, distance_km, rpk,fuel_burn_seymour, fuel_burn])  # Numerical data
-
-         # Encode categorical data
-        data_encoded = np.array([label_encoder.fit_transform([feature])[0] for feature in data])
-
-        # Combine and reshape data for scaling
-        features = np.concatenate((data_encoded, numerical_data)).reshape(1, -1)
-        features_scaled = scaler.transform(features)
-        # Make prediction
-        prediction = fuel_Pred_Model.predict(features_scaled)
-        print('prediction', prediction)
-        print('n', n)
-        average_emissions_per_flight = prediction[0] / n if n > 0 else 0
-
-        formatted_prediction = "{:,.2f}".format(prediction[0])  # Format the prediction to two decimal places and comma-separated
-        average_emissions_per_flight = "{:,.2f}".format(average_emissions_per_flight)
+        return render_template('fuelPrediction.html', predform=predform, calcform=calcform, prediction=formatted_prediction, average_emissions_per_flight=average_emissions_per_flight)
+    else:
+        flash('Must be a sytem administrator to access this page','warning')
+        return redirect('dashboard')
     
-    return render_template('fuelPrediction.html', form=form, prediction=formatted_prediction, average_emissions_per_flight=average_emissions_per_flight)
-
-    #     return render_template('results.html', prediction=formatted_prediction, distance=distance_km, rpk=rpk, fuel_burn=fuel_burn)
-    # return render_template('fuelPrediction.html', form=form)
 
 @app.route('/emissions-report/', methods=['GET', 'POST'])
 def generateReport():
+    if not (is_admin(current_user.username) or is_regulator(current_user.username)):
+        flash('Must be a system administrator or regulatory authority to access this page','warning')
+        return redirect('dashboard')
+    
     form = EmissionForm()
     if form.validate_on_submit():
         country_name = get_country_name_by_code(form.country.data)
@@ -397,6 +453,9 @@ def country_ranking():
 @login_required
 @app.route('/chat/')
 def load_chatbot():
+    if not(is_admin(current_user.username) or is_regulator(current_user.username)):
+        flash('Must be regulatory authority or airline operator to access this page','warning')
+        return redirect('dashboard')
     return render_template('chatbot.html')
 
 @app.route('/api/chat/', methods=['POST'])
@@ -448,7 +507,29 @@ def chat():
     except Exception as e:
         return jsonify({'error': f"Error processing request: {str(e)}"}), 500
 
-# Works and retruns  a dictionary
+# @app.route('/fuel-calculator', methods=['GET', 'POST'])
+def fuel_burn_calculator():
+    form = FuelBurnForm()
+    conn, cur = get_db_connection()
+    if form.validate_on_submit():
+        icao_code = form.icao_code.data.upper()
+        distance = form.distance.data
+
+        cur.execute(f"SELECT avg_fuel_burn_kg_km FROM aircraft_data WHERE icao_code = \'{icao_code}\'")
+
+        aircraft = cur.fetchone()
+        print(aircraft)
+        if aircraft:
+            avg_fuel_burn_kg_km = aircraft[0]
+            estimated_fuel = float(distance * avg_fuel_burn_kg_km)*1.07
+            flash(f'Estimated fuel burn for {distance} km: {estimated_fuel:.2f} kg', 'success')
+        else:
+            flash('Aircraft ICAO code not found in the database.', 'danger')
+
+        return redirect(url_for('fuel_burn_calculator'))
+
+    return render_template('fuel_burn_calculator.html', form=form)
+
 # Works and retruns  a dictionary
 def get_emissions(country, timeframe, start_year, month, quarter, end_year, end_month, end_quarter):
     base_url = "https://sdmx.oecd.org/public/rest/data"
@@ -490,6 +571,7 @@ def get_emissions(country, timeframe, start_year, month, quarter, end_year, end_
         except ET.ParseError:
             return "ErrorParsingXML"
     return "Failed to retrieve data"  # Handles other unexpected status codes
+
 
 
 @app.route('/login', methods=['POST', 'GET'])
@@ -804,3 +886,15 @@ def ajax_get_distance():
         return jsonify({"distance": d}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+def is_admin(username):
+    user = UserProfile.query.filter_by(username=username).first()
+    return user.role == 'admin'
+
+def is_regulator(username):
+    user = UserProfile.query.filter_by(username=username).first()
+    return user.role == 'regulator'
+
+def is_atc(username):
+    user = UserProfile.query.filter_by(username=username).first()
+    return user.role == 'atc'

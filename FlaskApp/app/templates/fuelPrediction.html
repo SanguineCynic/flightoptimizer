@@ -2,48 +2,89 @@
 <h1 class="main-heading-1">Emissions Predictor</h1>
 <div class="container mt-4">
   <form
-    method="POST"
-    action="{{ url_for('fuelPrediction') }}"
+  method="POST"
+  action="{{ url_for('fuelPrediction') }}"
     class="form-group"
   >
-    {{ form.csrf_token }}
+    {{ predform.csrf_token }}
     <div class="row">
       <div class="col-md-3">
-        {{ form.n_flights.label(class="form-label") }} {{
-        form.n_flights(class="form-control", placeholder="48") }}
+        {{ predform.n_flights.label(class="form-label") }} {{
+        predform.n_flights(class="form-control", placeholder="48") }}
       </div>
       <div class="col-md-3">
-        {{ form.airline_iata.label(class="form-label") }} {{
-        form.airline_iata(class="form-control", placeholder="MS") }}
+        {{ predform.airline_iata.label(class="form-label") }} {{
+        predform.airline_iata(class="form-control", placeholder="MS") }}
       </div>
       <div class="col-md-3">
-        {{ form.acft_icao.label(class="form-label") }} {{
-        form.acft_icao(class="form-control", placeholder="A320") }}
+        {{ predform.acft_icao.label(class="form-label") }} {{
+        predform.acft_icao(class="form-control", placeholder="A320") }}
       </div>
       <div class="col-md-3">
-        {{ form.seats.label(class="form-label") }} {{
-        form.seats(class="form-control", placeholder="7971") }}
+        {{ predform.seats.label(class="form-label") }} {{
+        predform.seats(class="form-control", placeholder="7971") }}
       </div>
     </div>
     <div class="row mt-2">
       <div class="col-md-3">
-        {{ form.icao_departure.label(class="form-label") }} {{
-        form.icao_departure(class="form-control", placeholder="EGLL") }}
+        {{ predform.icao_departure.label(class="form-label") }} {{
+        predform.icao_departure(class="form-control", placeholder="EGLL") }}
       </div>
       <div class="col-md-3">
-        {{ form.icao_arrival.label(class="form-label") }} {{
-        form.icao_arrival(class="form-control", placeholder="KJFK") }}
+        {{ predform.icao_arrival.label(class="form-label") }} {{
+        predform.icao_arrival(class="form-control", placeholder="KJFK") }}
       </div>
       <div class="col-md-3">
-        {{ form.fuel_burn_seymour.label(class="form-label") }} {{
-        form.fuel_burn_seymour(class="form-control", placeholder="2721.74") }}
+        {{ predform.fuel_burn_seymour.label(class="form-label") }} {{
+        predform.fuel_burn_seymour(class="form-control", placeholder="2721.74") }}
       </div>
       <div class="col-md-3 d-flex align-items-end justify-content-center">
-        {{ form.submit(class="btn btn-primary") }}
+        {{ predform.submit(class="btn btn-primary") }}
       </div>
     </div>
   </form>
 
+  <div class="card mx-auto" style="max-width: 600px">
+    <div class="card-header">
+      <h1 class="text-center">Fuel Burn Estimator</h1>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="">
+        {{ calcform.hidden_tag() }}
+        <div class="form-group">
+          {{ calcform.icao_code.label(class="form-label") }} {{
+          calcform.icao_code(class="form-control") }} {% if calcform.icao_code.errors %}
+          <div class="text-danger">
+            {% for error in calcform.icao_code.errors %}
+            <small>{{ error }}</small><br />
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          {{ calcform.distance.label(class="form-label") }} {{
+          calcform.distance(class="form-control") }} {% if calcform.distance.errors %}
+          <div class="text-danger">
+            {% for error in calcform.distance.errors %}
+            <small>{{ error }}</small><br />
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        <br>
+        {{ calcform.submit(class="btn btn-primary btn-block") }}
+      </form>
+  
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="mt-4">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
+    </div>
+  </div>
   {% if prediction %}
   <!-- <hr class="divider" /> -->
   <div class="results mt-4">

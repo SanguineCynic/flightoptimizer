@@ -1,0 +1,45 @@
+{% extends "base.html" %} {% block main %}
+<div class="card mx-auto" style="max-width: 600px">
+  <div class="card-header">
+    <h1 class="text-center">Fuel Burn Calculator</h1>
+  </div>
+  <div class="card-body">
+    <form method="POST" action="">
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        {{ form.icao_code.label(class="form-label") }} {{
+        form.icao_code(class="form-control") }} {% if form.icao_code.errors %}
+        <div class="text-danger">
+          {% for error in form.icao_code.errors %}
+          <small>{{ error }}</small><br />
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="form-group">
+        {{ form.distance.label(class="form-label") }} {{
+        form.distance(class="form-control") }} {% if form.distance.errors %}
+        <div class="text-danger">
+          {% for error in form.distance.errors %}
+          <small>{{ error }}</small><br />
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <br>
+      {{ form.submit(class="btn btn-primary btn-block") }}
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <div class="mt-4">
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+  </div>
+</div>
+{% endblock %} {% block css %}
+
+{% endblock %}

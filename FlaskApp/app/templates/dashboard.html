@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
 {% block main %}
+{% include 'flash_messages.html' %}
+
 <div class="text-dark bg-light text-center py-3 br-2 rounded d-flex flex-row justify-content-center align-items-center">
     <img class="img-fluid col-md-1 float-start" src="{{ url_for('static', filename='images/logo.png') }}" alt="">
     <div class="px-5">
@@ -11,7 +13,8 @@
 
 
 <div class="container mt-5">
-    <div class="row">
+    <div class="row justify-content-center">
+        {% if user_role == 'admin' or user_role == 'regulator' %}
         <!-- Card 1 -->
         <div class="col-md-3 mb-4">
             <div class="card h-100">
@@ -24,6 +27,8 @@
                 </div>
             </div>
         </div></a>
+        {% endif %}
+        {% if user_role == 'admin' or user_role == 'atc' %}
         <!-- Card 2 -->
         <div class="col-md-3 mb-4">
             <div class="card h-100">
@@ -36,6 +41,8 @@
                 </div></a>
             </div>
         </div>
+        {% endif %}
+        {% if user_role == 'admin' or user_role == 'regulator' %}
         <!-- Card 3 -->
         <div class="col-md-3 mb-4">
             <div class="card h-100">
@@ -48,6 +55,8 @@
                 </div></a>
             </div>
         </div>
+        {% endif %}
+        {% if user_role == 'admin'%}
         <!-- Card 4 -->
         <div class="col-md-3 mb-4">
             <div class="card h-100">
@@ -62,6 +71,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block js %}

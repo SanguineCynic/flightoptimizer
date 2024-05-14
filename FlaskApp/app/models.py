@@ -13,12 +13,14 @@ class UserProfile(db.Model):
     last_name = db.Column(db.String(80))
     username = db.Column(db.String(80), unique=True)
     password = db.Column(db.String(128))
+    role = db.Column(db.String(80))
 
-    def __init__(self, first_name, last_name, username, password):
+    def __init__(self, first_name, last_name, username, password, role):
         self.first_name = first_name
         self.last_name = last_name
         self.username = username
         self.password = generate_password_hash(password, method='pbkdf2:sha256')
+        self.role = role
 
     def is_authenticated(self):
         return True
@@ -28,6 +30,7 @@ class UserProfile(db.Model):
 
     def is_anonymous(self):
         return False
+        
 
     def get_id(self):
         try:

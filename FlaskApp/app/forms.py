@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, FloatField, SubmitField, SelectField, PasswordField, IntegerField
+from wtforms import StringField, FloatField, SubmitField, SelectField, PasswordField, IntegerField, DecimalField
 from wtforms.validators import InputRequired, Length, NumberRange, DataRequired, ValidationError
 import requests, psycopg2,os
 
@@ -36,8 +36,8 @@ class FuelPredictionForm(FlaskForm):
     acft_icao = StringField('Aircraft ICAO Code', validators=[InputRequired(), Length(min=3, max=4)], description="Enter the ICAO code of the aircraft type.")
     seats = FloatField('Number of Filled Seats', validators=[InputRequired(), NumberRange(min=1)], description="Enter the number of seats available for the data entry.")
     n_flights = FloatField('Number of Flights in Entry', validators=[InputRequired(), NumberRange(min=0)], description="Enter the number of flights of the data entry.")
-    icao_departure = StringField('Departure Airport ICAO Code', validators=[InputRequired(), Length(min=4, max=4)], description="Enter the ICAO code of the origin airport.")
-    icao_arrival = StringField('Arrival Airport ICAO Code', validators=[InputRequired(), Length(min=4, max=4)], description="Enter the ICAO code of the destination airport.")
+    icao_departure = StringField('Departure Airport ICAO/IATA Code', validators=[InputRequired(), Length(min=3, max=4)], description="Enter the ICAO code of the origin airport.")
+    icao_arrival = StringField('Arrival Airport ICAO/IATA Code', validators=[InputRequired(), Length(min=3, max=4)], description="Enter the ICAO code of the destination airport.")
     fuel_burn_seymour = FloatField('Fuel Burn per Flight (kg)', validators=[InputRequired(), NumberRange(min=0)], description="Enter the fuel burn per flight in kg.")
     submit = SubmitField('Predict')
 
@@ -70,3 +70,8 @@ class EmissionRankingForm(FlaskForm):
     end_month = SelectField('End Month', choices=[(str(i), str(i).zfill(2)) for i in range(1, 13)])
     order = SelectField('Order', choices=[('ascending', 'Ascending'), ('descending', 'Descending')], default='descending')
     submit = SubmitField('Get Ranking')
+
+class FuelBurnForm(FlaskForm):
+    icao_code = StringField('Aircraft ICAO Code', validators=[DataRequired(), Length(min=4, max=4, message='ICAO code must be 4 characters long')])
+    distance = DecimalField('Distance (km)', validators=[DataRequired(), NumberRange(min=0)])
+    submit = SubmitField('Calculate Fuel Burn')

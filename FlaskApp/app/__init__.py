@@ -57,6 +57,28 @@ cur.execute("""
         name TEXT NOT NULL
     );
 """)
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS aircraft_data (
+    model TEXT,
+    icao_code TEXT PRIMARY KEY,
+    iata_code TEXT,
+    avg_seats NUMERIC,
+    avg_sector_km NUMERIC,
+    avg_fuel_burn_kg_km NUMERIC,
+    avg_fuel_per_seat_l_100km NUMERIC
+);
+""")
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS iata_to_icao (
+        country_code VARCHAR(4),
+        region_name VARCHAR(60),
+        iata VARCHAR(4),
+        icao VARCHAR(5),
+        airport VARCHAR(60),
+        latitude NUMERIC,
+        longitude NUMERIC
+    )
+""")
 
 conn.commit()
 
