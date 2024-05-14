@@ -50,7 +50,7 @@ def home():
         return render_template('home.html', icao_codes=icao_codes, region_names=region_names, airports=airports)
     else:
         flash('Must be an ATC to access this page', 'warning')
-        return redirect('dashboard')
+        return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
 @login_required
@@ -112,14 +112,14 @@ def airport_weather(icao):
                             forecast_desc=forecast_desc, taf_impacts=taf_impacts, sigmet_impacts=sigmet_impacts)
     else:
         flash('Must be ATC to access this page','warning')
-        return redirect('dashboard')
+        return redirect(url_for('dashboard'))
     
 @app.route('/flights/')
 @login_required
 def flights():
     if not(is_admin(current_user.username)):
         flash('Must be system administrator to access this page','warning')
-        return redirect('dashboard')
+        return redirect(url_for('dashboard'))
     conn, cur = get_db_connection()
 
     # Queries the Airport model from models.py to check for table population. If empty, populate.
@@ -147,7 +147,7 @@ def flights():
 def flights_to_dest(src, dest, date):
     if not(is_admin(current_user.username)):
         flash('Must be system administrator to access this page','warning')
-        return redirect('dashboard')
+        return redirect(url_for('dashboard'))
     rockMe = Client(
         client_id=os.environ.get("AMADEUS_CLIENT_ID"),
         client_secret=os.environ.get("AMADEUS_API_KEY")
@@ -307,14 +307,14 @@ def fuelPrediction():
         return render_template('fuelPrediction.html', predform=predform, calcform=calcform, prediction=formatted_prediction, average_emissions_per_flight=average_emissions_per_flight)
     else:
         flash('Must be a sytem administrator to access this page','warning')
-        return redirect('dashboard')
+        return redirect(url_for('dashboard'))
     
 
 @app.route('/emissions-report/', methods=['GET', 'POST'])
 def generateReport():
     if not (is_admin(current_user.username) or is_regulator(current_user.username)):
         flash('Must be a system administrator or regulatory authority to access this page','warning')
-        return redirect('dashboard')
+        return redirect(url_for('dashboard'))
     
     form = EmissionForm()
     if form.validate_on_submit():
@@ -455,7 +455,7 @@ def country_ranking():
 def load_chatbot():
     if not(is_admin(current_user.username) or is_regulator(current_user.username)):
         flash('Must be regulatory authority or airline operator to access this page','warning')
-        return redirect('dashboard')
+        return redirect(url_for('dashboard'))
     return render_template('chatbot.html')
 
 @app.route('/api/chat/', methods=['POST'])
